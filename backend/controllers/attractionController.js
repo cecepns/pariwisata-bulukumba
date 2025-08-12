@@ -1,14 +1,24 @@
 // ANCHOR: Attractions controller
-// Provides public fetch and admin CRUD for attractions.
+// Provides public fetch and admin CRUD for attractions (mapped to table `wisata`).
 import { query } from '../config.js';
 
 export async function getAllAttractions(req, res) {
   try {
     const rows = await query(
-      `SELECT a.*, c.name AS category_name
-       FROM attractions a
-       LEFT JOIN categories c ON c.id = a.category_id
-       ORDER BY a.id DESC`
+      `SELECT
+         w.id_wisata AS id,
+         w.id_kategori AS category_id,
+         k.nama_kategori AS category_name,
+         w.nama_wisata AS name,
+         w.deskripsi AS description,
+         w.harga_tiket AS ticket_price,
+         w.jam_operasional AS operational_hours,
+         w.fasilitas AS facilities,
+         w.peta_wisata AS gmaps_iframe_url,
+         (SELECT gg.gambar FROM galeri gg WHERE gg.id_wisata = w.id_wisata ORDER BY gg.id_galeri ASC LIMIT 1) AS cover_image_url
+       FROM wisata w
+       LEFT JOIN kategori k ON k.id_kategori = w.id_kategori
+       ORDER BY w.id_wisata DESC`
     );
     res.json(rows);
   } catch (err) {
@@ -21,10 +31,20 @@ export async function getAttractionById(req, res) {
   try {
     const { id } = req.params;
     const rows = await query(
-      `SELECT a.*, c.name AS category_name
-       FROM attractions a
-       LEFT JOIN categories c ON c.id = a.category_id
-       WHERE a.id = ?
+      `SELECT
+         w.id_wisata AS id,
+         w.id_kategori AS category_id,
+         k.nama_kategori AS category_name,
+         w.nama_wisata AS name,
+         w.deskripsi AS description,
+         w.harga_tiket AS ticket_price,
+         w.jam_operasional AS operational_hours,
+         w.fasilitas AS facilities,
+         w.peta_wisata AS gmaps_iframe_url,
+         (SELECT gg.gambar FROM galeri gg WHERE gg.id_wisata = w.id_wisata ORDER BY gg.id_galeri ASC LIMIT 1) AS cover_image_url
+       FROM wisata w
+       LEFT JOIN kategori k ON k.id_kategori = w.id_kategori
+       WHERE w.id_wisata = ?
        LIMIT 1`,
       [id]
     );
@@ -52,9 +72,9 @@ export async function createAttraction(req, res) {
     if (!name) return res.status(400).json({ message: 'Name is required' });
 
     const result = await query(
-      `INSERT INTO attractions
-      (category_id, name, description, ticket_price, operational_hours, facilities, gmaps_iframe_url, cover_image_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO wisata
+        (id_kategori, nama_wisata, deskripsi, harga_tiket, jam_operasional, fasilitas, peta_wisata, keterangan)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         category_id || null,
         name,
@@ -63,10 +83,19 @@ export async function createAttraction(req, res) {
         operational_hours || null,
         facilities || null,
         gmaps_iframe_url || null,
-        cover_image_url || null,
+        null,
       ]
     );
-    res.status(201).json({ id: result.insertId });
+
+    const newId = result.insertId;
+    if (cover_image_url) {
+      await query(
+        `INSERT INTO galeri (id_wisata, gambar, keterangan, nama) VALUES (?, ?, ?, ?)`,
+        [newId, cover_image_url, 'Cover', 'Cover']
+      );
+    }
+
+    res.status(201).json({ id: newId });
   } catch (err) {
     console.error('createAttraction error', err);
     res.status(500).json({ message: 'Server error' });
@@ -76,29 +105,55 @@ export async function createAttraction(req, res) {
 export async function updateAttraction(req, res) {
   try {
     const { id } = req.params;
-    const fields = [
-      'category_id',
-      'name',
-      'description',
-      'ticket_price',
-      'operational_hours',
-      'facilities',
-      'gmaps_iframe_url',
-      'cover_image_url',
-    ];
+    const map = {
+      category_id: 'id_kategori',
+      name: 'nama_wisata',
+      description: 'deskripsi',
+      ticket_price: 'harga_tiket',
+      operational_hours: 'jam_operasional',
+      facilities: 'fasilitas',
+      gmaps_iframe_url: 'peta_wisata',
+    };
 
     const updates = [];
     const params = [];
-    for (const field of fields) {
-      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
-        updates.push(`${field} = ?`);
-        params.push(req.body[field]);
+    for (const [apiField, column] of Object.entries(map)) {
+      if (Object.prototype.hasOwnProperty.call(req.body, apiField)) {
+        updates.push(`${column} = ?`);
+        params.push(req.body[apiField]);
       }
     }
-    if (updates.length === 0) return res.status(400).json({ message: 'No fields to update' });
 
-    params.push(id);
-    await query(`UPDATE attractions SET ${updates.join(', ')} WHERE id = ?`, params);
+    if (updates.length > 0) {
+      params.push(id);
+      await query(`UPDATE wisata SET ${updates.join(', ')} WHERE id_wisata = ?`, params);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'cover_image_url')) {
+      const cover = req.body.cover_image_url;
+      if (cover) {
+        const existing = await query(
+          `SELECT id_galeri FROM galeri WHERE id_wisata = ? ORDER BY id_galeri ASC LIMIT 1`,
+          [id]
+        );
+        if (existing && existing.length > 0) {
+          await query(`UPDATE galeri SET gambar = ?, keterangan = ?, nama = ? WHERE id_galeri = ?`, [
+            cover,
+            'Cover',
+            'Cover',
+            existing[0].id_galeri,
+          ]);
+        } else {
+          await query(`INSERT INTO galeri (id_wisata, gambar, keterangan, nama) VALUES (?, ?, ?, ?)`, [
+            id,
+            cover,
+            'Cover',
+            'Cover',
+          ]);
+        }
+      }
+    }
+
     res.json({ message: 'Updated' });
   } catch (err) {
     console.error('updateAttraction error', err);
@@ -109,7 +164,7 @@ export async function updateAttraction(req, res) {
 export async function deleteAttraction(req, res) {
   try {
     const { id } = req.params;
-    await query('DELETE FROM attractions WHERE id = ?', [id]);
+    await query('DELETE FROM wisata WHERE id_wisata = ?', [id]);
     res.json({ message: 'Deleted' });
   } catch (err) {
     console.error('deleteAttraction error', err);

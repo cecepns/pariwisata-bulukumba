@@ -1,10 +1,19 @@
 // ANCHOR: Galleries controller
-// Provides public fetch and admin CRUD for gallery items.
+// Provides public fetch and admin CRUD for gallery items (mapped to table `galeri`).
 import { query } from '../config.js';
 
 export async function getAllGalleries(req, res) {
   try {
-    const rows = await query('SELECT * FROM galleries ORDER BY id DESC');
+    const rows = await query(
+      `SELECT 
+         g.id_galeri AS id,
+         g.id_wisata,
+         g.gambar AS image_url,
+         g.keterangan AS caption,
+         g.nama
+       FROM galeri g
+       ORDER BY g.id_galeri DESC`
+    );
     res.json(rows);
   } catch (err) {
     console.error('getAllGalleries error', err);
@@ -14,11 +23,12 @@ export async function getAllGalleries(req, res) {
 
 export async function createGallery(req, res) {
   try {
-    const { image_url, caption } = req.body || {};
+    const { id_wisata, image_url, caption, nama } = req.body || {};
+    if (!id_wisata) return res.status(400).json({ message: 'id_wisata is required' });
     if (!image_url) return res.status(400).json({ message: 'image_url is required' });
     const result = await query(
-      `INSERT INTO galleries (image_url, caption) VALUES (?, ?)`,
-      [image_url, caption || null]
+      `INSERT INTO galeri (id_wisata, gambar, keterangan, nama) VALUES (?, ?, ?, ?)`,
+      [id_wisata, image_url, caption || null, nama || null]
     );
     res.status(201).json({ id: result.insertId });
   } catch (err) {
@@ -30,18 +40,23 @@ export async function createGallery(req, res) {
 export async function updateGallery(req, res) {
   try {
     const { id } = req.params;
-    const fields = ['image_url', 'caption'];
+    const map = {
+      id_wisata: 'id_wisata',
+      image_url: 'gambar',
+      caption: 'keterangan',
+      nama: 'nama',
+    };
     const updates = [];
     const params = [];
-    for (const field of fields) {
-      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
-        updates.push(`${field} = ?`);
-        params.push(req.body[field]);
+    for (const [apiField, column] of Object.entries(map)) {
+      if (Object.prototype.hasOwnProperty.call(req.body, apiField)) {
+        updates.push(`${column} = ?`);
+        params.push(req.body[apiField]);
       }
     }
     if (updates.length === 0) return res.status(400).json({ message: 'No fields to update' });
     params.push(id);
-    await query(`UPDATE galleries SET ${updates.join(', ')} WHERE id = ?`, params);
+    await query(`UPDATE galeri SET ${updates.join(', ')} WHERE id_galeri = ?`, params);
     res.json({ message: 'Updated' });
   } catch (err) {
     console.error('updateGallery error', err);
@@ -52,7 +67,7 @@ export async function updateGallery(req, res) {
 export async function deleteGallery(req, res) {
   try {
     const { id } = req.params;
-    await query('DELETE FROM galleries WHERE id = ?', [id]);
+    await query('DELETE FROM galeri WHERE id_galeri = ?', [id]);
     res.json({ message: 'Deleted' });
   } catch (err) {
     console.error('deleteGallery error', err);

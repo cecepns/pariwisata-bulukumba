@@ -1,17 +1,22 @@
 // ANCHOR: Admin controller (authentication)
-// Handles admin login and token generation.
+// Handles admin login and token generation using the new `admin` table schema.
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { query } from '../config.js';
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    const { password } = req.body || {};
+    const username = (req.body && (req.body.username || req.body.email)) || '';
+
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
     }
 
-    const admins = await query('SELECT id, email, password FROM admins WHERE email = ? LIMIT 1', [email]);
+    const admins = await query(
+      'SELECT id_admin AS id, username, password FROM admin WHERE username = ? LIMIT 1',
+      [username]
+    );
     if (!admins || admins.length === 0) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -22,7 +27,7 @@ export async function login(req, res) {
     }
 
     const secret = process.env.JWT_SECRET || 'dev_secret_change_me';
-    const token = jwt.sign({ id: admin.id, email: admin.email }, secret, { expiresIn: '7d' });
+    const token = jwt.sign({ id: admin.id, username: admin.username }, secret, { expiresIn: '7d' });
     return res.json({ token });
   } catch (err) {
     console.error('Login error', err);

@@ -38,19 +38,19 @@ async function ensureDatabaseConnection() {
 }
 
 async function seedDefaultAdminIfEnabled() {
-  const { SEED_ADMIN_ON_STARTUP = 'true', ADMIN_EMAIL = 'admin@pariwisata.go.id', ADMIN_PASSWORD = 'admin123' } = process.env;
+  const { SEED_ADMIN_ON_STARTUP = 'true', ADMIN_USERNAME = 'admin', ADMIN_PASSWORD = 'admin123' } = process.env;
   if (SEED_ADMIN_ON_STARTUP !== 'true') return;
 
   const hashed = await bcrypt.hash(ADMIN_PASSWORD, 10);
-  const existing = await query('SELECT id FROM admins WHERE email = ? LIMIT 1', [ADMIN_EMAIL]);
+  const existing = await query('SELECT id_admin FROM admin WHERE username = ? LIMIT 1', [ADMIN_USERNAME]);
   if (!existing || existing.length === 0) {
-    await query('INSERT INTO admins (email, password) VALUES (?, ?)', [ADMIN_EMAIL, hashed]);
-    console.log(`Seeded admin ${ADMIN_EMAIL}`);
+    await query('INSERT INTO admin (username, password) VALUES (?, ?)', [ADMIN_USERNAME, hashed]);
+    console.log(`Seeded admin ${ADMIN_USERNAME}`);
     return;
   }
-  const adminId = existing[0].id;
-  await query('UPDATE admins SET password = ? WHERE id = ?', [hashed, adminId]);
-  console.log(`Updated admin password for ${ADMIN_EMAIL}`);
+  const adminId = existing[0].id_admin;
+  await query('UPDATE admin SET password = ? WHERE id_admin = ?', [hashed, adminId]);
+  console.log(`Updated admin password for ${ADMIN_USERNAME}`);
 }
 
 app.listen(PORT, async () => {
