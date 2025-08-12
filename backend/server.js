@@ -1,0 +1,67 @@
+// ANCHOR: Express server for Bulukumba Tourism API
+// Sets up public and admin routes, CORS, and DB bootstrap.
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
+import { pool, query } from './config.js';
+
+import publicAttractions from './routes/attractions.js';
+import publicEvents from './routes/events.js';
+import publicGalleries from './routes/galleries.js';
+import adminRoutes from './routes/admin.js';
+
+dotenv.config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(morgan('dev'));
+
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
+// Public API
+app.use('/api/attractions', publicAttractions);
+app.use('/api/events', publicEvents);
+app.use('/api/gallery', publicGalleries);
+
+// Admin API
+app.use('/api/admin', adminRoutes);
+
+const PORT = process.env.PORT || 5000;
+
+async function ensureDatabaseConnection() {
+  const conn = await pool.getConnection();
+  await conn.ping();
+  conn.release();
+}
+
+async function seedDefaultAdminIfEnabled() {
+  const { SEED_ADMIN_ON_STARTUP = 'true', ADMIN_EMAIL = 'admin@pariwisata.go.id', ADMIN_PASSWORD = 'admin123' } = process.env;
+  if (SEED_ADMIN_ON_STARTUP !== 'true') return;
+
+  const hashed = await bcrypt.hash(ADMIN_PASSWORD, 10);
+  const existing = await query('SELECT id FROM admins WHERE email = ? LIMIT 1', [ADMIN_EMAIL]);
+  if (!existing || existing.length === 0) {
+    await query('INSERT INTO admins (email, password) VALUES (?, ?)', [ADMIN_EMAIL, hashed]);
+    console.log(`Seeded admin ${ADMIN_EMAIL}`);
+    return;
+  }
+  const adminId = existing[0].id;
+  await query('UPDATE admins SET password = ? WHERE id = ?', [hashed, adminId]);
+  console.log(`Updated admin password for ${ADMIN_EMAIL}`);
+}
+
+app.listen(PORT, async () => {
+  try {
+    await ensureDatabaseConnection();
+    await seedDefaultAdminIfEnabled();
+    console.log(`Server listening on http://localhost:${PORT}`);
+  } catch (err) {
+    console.error('Startup error:', err);
+    process.exit(1);
+  }
+});
+
+
