@@ -69,13 +69,13 @@ export default function ManageAttractions() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Kelola Objek Wisata</h1>
-        <button className="btn btn-primary" onClick={openCreate}>Tambah</button>
+        <button className="btn btn-soft btn-primary text-white" onClick={openCreate}>Tambah</button>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-10"><span className="loading loading-spinner" /></div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
           <table className="table">
             <thead>
               <tr>
@@ -86,17 +86,23 @@ export default function ManageAttractions() {
               </tr>
             </thead>
             <tbody>
-              {data.map((a) => (
-                <tr key={a.id}>
-                  <td>{a.id}</td>
-                  <td>{a.name}</td>
-                  <td>{a.category_name || '-'}</td>
-                  <td className="space-x-2">
-                    <button className="btn btn-xs" onClick={() => openEdit(a)}>Edit</button>
-                    <button className="btn btn-xs btn-error" onClick={() => handleDelete(a.id)}>Hapus</button>
-                  </td>
+              {data.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="text-center py-6 text-base-content/60">Tidak ada data</td>
                 </tr>
-              ))}
+              ) : (
+                data.map((a) => (
+                  <tr key={a.id}>
+                    <td>{a.id}</td>
+                    <td>{a.name}</td>
+                    <td>{a.category_name || '-'}</td>
+                    <td className="space-x-2">
+                      <button className="btn btn-xs" onClick={() => openEdit(a)}>Edit</button>
+                      <button className="btn btn-xs btn-error" onClick={() => handleDelete(a.id)}>Hapus</button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
