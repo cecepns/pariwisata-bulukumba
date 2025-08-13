@@ -4,14 +4,14 @@ import api from '../../services/api.js';
 import { Form, Button, Card, Alert } from '../../components';
 
 const emptyForm = {
-  category_id: '',
-  name: '',
-  description: '',
-  ticket_price: '',
-  operational_hours: '',
-  facilities: '',
-  gmaps_iframe_url: '',
-  cover_image_url: '',
+  id_kategori: '',
+  nama_wisata: '',
+  deskripsi: '',
+  harga_tiket: '',
+  jam_operasional: '',
+  fasilitas: '',
+  peta_wisata: '',
+  keterangan: '',
 };
 
 /**
@@ -31,6 +31,7 @@ export default function CreateAttraction() {
     async function fetchCategories() {
       try {
         const response = await api.get('/admin/categories');
+        console.log('Categories response:', response.data);
         setCategories(response.data);
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -52,8 +53,14 @@ export default function CreateAttraction() {
     
     try {
       const payload = {
-        ...form,
-        category_id: form.category_id ? Number(form.category_id) : null,
+        category_id: form.id_kategori ? Number(form.id_kategori) : null,
+        name: form.nama_wisata,
+        description: form.deskripsi,
+        ticket_price: form.harga_tiket,
+        operational_hours: form.jam_operasional,
+        facilities: form.fasilitas,
+        gmaps_iframe_url: form.peta_wisata,
+        keterangan: form.keterangan,
       };
       await api.post('/admin/attractions', payload);
       setAlert({
@@ -101,25 +108,30 @@ export default function CreateAttraction() {
             <Form.Input
               label="Nama Objek Wisata"
               placeholder="Masukkan nama objek wisata"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              value={form.nama_wisata}
+              onChange={(e) => setForm({ ...form, nama_wisata: e.target.value })}
               required
             />
             
             <Form.Select
               label="Kategori"
-              placeholder="Pilih kategori (opsional)"
-              value={form.category_id}
-              onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-              options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
+              placeholder="Pilih kategori"
+              value={form.id_kategori}
+              onChange={(e) => setForm({ ...form, id_kategori: e.target.value })}
+              options={categories.map(cat => {
+                console.log('Mapping category:', cat);
+                return { value: cat.id, label: cat.name };
+              })}
               disabled={loadingCategories}
+              required
             />
+
             
             <Form.Textarea
               label="Deskripsi"
               placeholder="Masukkan deskripsi objek wisata"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              value={form.deskripsi}
+              onChange={(e) => setForm({ ...form, deskripsi: e.target.value })}
               rows={4}
             />
           </Form.Section>
@@ -129,14 +141,14 @@ export default function CreateAttraction() {
               <Form.Input
                 label="Harga Tiket"
                 placeholder="Contoh: Rp 50.000"
-                value={form.ticket_price}
-                onChange={(e) => setForm({ ...form, ticket_price: e.target.value })}
+                value={form.harga_tiket}
+                onChange={(e) => setForm({ ...form, harga_tiket: e.target.value })}
               />
               <Form.Input
                 label="Jam Operasional"
                 placeholder="Contoh: 08:00 - 17:00"
-                value={form.operational_hours}
-                onChange={(e) => setForm({ ...form, operational_hours: e.target.value })}
+                value={form.jam_operasional}
+                onChange={(e) => setForm({ ...form, jam_operasional: e.target.value })}
               />
             </Form.Row>
           </Form.Section>
@@ -145,25 +157,27 @@ export default function CreateAttraction() {
             <Form.Textarea
               label="Fasilitas"
               placeholder="Daftar fasilitas yang tersedia"
-              value={form.facilities}
-              onChange={(e) => setForm({ ...form, facilities: e.target.value })}
+              value={form.fasilitas}
+              onChange={(e) => setForm({ ...form, fasilitas: e.target.value })}
               rows={3}
             />
             
-            <Form.Input
-              label="Google Maps Embed URL"
-              placeholder="URL embed dari Google Maps"
-              value={form.gmaps_iframe_url}
-              onChange={(e) => setForm({ ...form, gmaps_iframe_url: e.target.value })}
-              helperText="Paste URL embed dari Google Maps"
+            <Form.Textarea
+              label="Peta Wisata"
+              placeholder="Paste script iframe dari Google Maps atau peta lainnya"
+              value={form.peta_wisata}
+              onChange={(e) => setForm({ ...form, peta_wisata: e.target.value })}
+              rows={4}
+              helperText="Paste script iframe lengkap dari Google Maps atau peta lainnya"
             />
             
-            <Form.Input
-              label="Cover Image URL"
-              placeholder="URL gambar cover"
-              value={form.cover_image_url}
-              onChange={(e) => setForm({ ...form, cover_image_url: e.target.value })}
-              helperText="URL gambar yang akan ditampilkan sebagai cover"
+            <Form.Textarea
+              label="Keterangan"
+              placeholder="Informasi tambahan atau catatan khusus"
+              value={form.keterangan}
+              onChange={(e) => setForm({ ...form, keterangan: e.target.value })}
+              rows={3}
+              helperText="Informasi tambahan yang ingin ditampilkan"
             />
           </Form.Section>
         </Form>

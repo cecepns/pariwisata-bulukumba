@@ -66,7 +66,7 @@ export async function createAttraction(req, res) {
       operational_hours,
       facilities,
       gmaps_iframe_url,
-      cover_image_url,
+      keterangan,
     } = req.body || {};
 
     if (!name) return res.status(400).json({ message: 'Name is required' });
@@ -83,18 +83,11 @@ export async function createAttraction(req, res) {
         operational_hours || null,
         facilities || null,
         gmaps_iframe_url || null,
-        null,
+        keterangan || null,
       ]
     );
 
     const newId = result.insertId;
-    if (cover_image_url) {
-      await query(
-        `INSERT INTO galeri (id_wisata, gambar, keterangan, nama) VALUES (?, ?, ?, ?)`,
-        [newId, cover_image_url, 'Cover', 'Cover']
-      );
-    }
-
     res.status(201).json({ id: newId });
   } catch (err) {
     console.error('createAttraction error', err);
