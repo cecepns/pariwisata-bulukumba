@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../../services/api.js';
-import { Form, Button, Card, Alert } from '../../components';
+import { Form, Button, Card } from '../../components';
 
 const emptyForm = {
   id_kategori: '',
@@ -27,7 +28,6 @@ export default function FormAttraction() {
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingAttraction, setLoadingAttraction] = useState(isEditing);
-  const [alert, setAlert] = useState(null);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -38,6 +38,7 @@ export default function FormAttraction() {
         setCategories(response.data);
       } catch (error) {
         console.error('Error fetching categories:', error);
+        toast.error('Gagal memuat kategori');
       } finally {
         setLoadingCategories(false);
       }
@@ -64,11 +65,7 @@ export default function FormAttraction() {
           });
         } catch (error) {
           console.error('Error fetching attraction:', error);
-          setAlert({
-            type: 'error',
-            title: 'Error!',
-            message: 'Gagal memuat data objek wisata.'
-          });
+          toast.error('Gagal memuat data objek wisata');
         } finally {
           setLoadingAttraction(false);
         }
@@ -84,7 +81,6 @@ export default function FormAttraction() {
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitting(true);
-    setAlert(null);
     
     try {
       const payload = {
@@ -100,29 +96,15 @@ export default function FormAttraction() {
 
       if (isEditing) {
         await api.put(`/admin/attractions/${id}`, payload);
-        setAlert({
-          type: 'success',
-          title: 'Berhasil!',
-          message: 'Objek wisata berhasil diperbarui.'
-        });
+        toast.success('Objek wisata berhasil diperbarui');
       } else {
         await api.post('/admin/attractions', payload);
-        setAlert({
-          type: 'success',
-          title: 'Berhasil!',
-          message: 'Objek wisata berhasil ditambahkan.'
-        });
+        toast.success('Objek wisata berhasil ditambahkan');
       }
 
-      setTimeout(() => {
-        navigate('/admin/attractions', { replace: true });
-      }, 1500);
+      navigate('/admin/attractions');
     } catch (error) {
-      setAlert({
-        type: 'error',
-        title: 'Error!',
-        message: isEditing ? 'Gagal memperbarui objek wisata. Silakan coba lagi.' : 'Gagal menambahkan objek wisata. Silakan coba lagi.'
-      });
+      toast.error(isEditing ? 'Gagal memperbarui objek wisata. Silakan coba lagi.' : 'Gagal menambahkan objek wisata. Silakan coba lagi.');
     } finally {
       setSubmitting(false);
     }
@@ -141,17 +123,6 @@ export default function FormAttraction() {
 
   return (
     <div className="space-y-6">
-      {/* Alert */}
-      {alert && (
-        <Alert
-          type={alert.type}
-          title={alert.title}
-          onClose={() => setAlert(null)}
-        >
-          {alert.message}
-        </Alert>
-      )}
-
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">
           {isEditing ? 'Edit Objek Wisata' : 'Tambah Objek Wisata'}
