@@ -6,15 +6,16 @@ export async function getAllAttractions(req, res) {
   try {
     const rows = await query(
       `SELECT
-         w.id_wisata AS id,
-         w.id_kategori AS category_id,
-         k.nama_kategori AS category_name,
-         w.nama_wisata AS name,
-         w.deskripsi AS description,
-         w.harga_tiket AS ticket_price,
-         w.jam_operasional AS operational_hours,
-         w.fasilitas AS facilities,
-         w.peta_wisata AS gmaps_iframe_url,
+         w.id_wisata,
+         w.id_kategori,
+         k.nama_kategori,
+         w.nama_wisata,
+         w.deskripsi,
+         w.harga_tiket,
+         w.jam_operasional,
+         w.fasilitas,
+         w.peta_wisata,
+         w.keterangan,
          (SELECT gg.gambar FROM galeri gg WHERE gg.id_wisata = w.id_wisata ORDER BY gg.id_galeri ASC LIMIT 1) AS cover_image_url
        FROM wisata w
        LEFT JOIN kategori k ON k.id_kategori = w.id_kategori
@@ -32,16 +33,16 @@ export async function getAttractionById(req, res) {
     const { id } = req.params;
     const rows = await query(
       `SELECT
-         w.id_wisata AS id,
-         w.id_kategori AS category_id,
-         k.nama_kategori AS category_name,
-         w.nama_wisata AS name,
-         w.deskripsi AS description,
-         w.harga_tiket AS ticket_price,
-         w.jam_operasional AS operational_hours,
-         w.fasilitas AS facilities,
-         w.peta_wisata AS gmaps_iframe_url,
-         w.keterangan AS keterangan,
+         w.id_wisata,
+         w.id_kategori,
+         k.nama_kategori,
+         w.nama_wisata,
+         w.deskripsi,
+         w.harga_tiket,
+         w.jam_operasional,
+         w.fasilitas,
+         w.peta_wisata,
+         w.keterangan,
          (SELECT gg.gambar FROM galeri gg WHERE gg.id_wisata = w.id_wisata ORDER BY gg.id_galeri ASC LIMIT 1) AS cover_image_url
        FROM wisata w
        LEFT JOIN kategori k ON k.id_kategori = w.id_kategori
@@ -89,7 +90,7 @@ export async function createAttraction(req, res) {
     );
 
     const newId = result.insertId;
-    res.status(201).json({ id: newId });
+    res.status(201).json({ id_wisata: newId });
   } catch (err) {
     console.error('createAttraction error', err);
     res.status(500).json({ message: 'Server error' });

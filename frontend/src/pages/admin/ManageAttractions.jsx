@@ -13,6 +13,8 @@ export default function ManageAttractions() {
     api.get('/admin/attractions').then((res) => setData(res.data)).finally(() => setLoading(false));
   }
 
+  console.log(data);
+
   useEffect(() => { 
     load(); 
   }, []);
@@ -28,13 +30,15 @@ export default function ManageAttractions() {
   }
 
   function handleEdit(item) {
-    navigate(`/admin/attractions/${item.id}/edit`);
+    navigate(`/admin/attractions/${item.id_wisata}/edit`);
   }
 
   const columns = [
-    { key: 'id', title: 'ID' },
-    { key: 'name', title: 'Nama' },
-    { key: 'category_name', title: 'Kategori' }
+    { key: 'id_wisata', title: 'ID' },
+    { key: 'nama_wisata', title: 'Nama Wisata' },
+    { key: 'nama_kategori', title: 'Kategori' },
+    { key: 'harga_tiket', title: 'Harga Tiket' },
+    { key: 'jam_operasional', title: 'Jam Operasional' }
   ];
 
   return (
@@ -63,9 +67,9 @@ export default function ManageAttractions() {
           setShowDeleteModal(false);
           setSelectedItem(null);
         }}
-        onConfirm={() => handleDelete(selectedItem?.id)}
+        onConfirm={() => handleDelete(selectedItem?.id_wisata)}
         title="Hapus Objek Wisata"
-        message={`Apakah Anda yakin ingin menghapus "${selectedItem?.name}"?`}
+        message={`Apakah Anda yakin ingin menghapus "${selectedItem?.nama_wisata}"?`}
         confirmText="Hapus"
         cancelText="Batal"
         variant="error"

@@ -6,10 +6,10 @@ export async function getAllGalleries(req, res) {
   try {
     const rows = await query(
       `SELECT 
-         g.id_galeri AS id,
+         g.id_galeri,
          g.id_wisata,
-         g.gambar AS image_url,
-         g.keterangan AS caption,
+         g.gambar,
+         g.keterangan,
          g.nama
        FROM galeri g
        ORDER BY g.id_galeri DESC`
@@ -30,7 +30,7 @@ export async function createGallery(req, res) {
       `INSERT INTO galeri (id_wisata, gambar, keterangan, nama) VALUES (?, ?, ?, ?)`,
       [id_wisata, image_url, caption || null, nama || null]
     );
-    res.status(201).json({ id: result.insertId });
+    res.status(201).json({ id_galeri: result.insertId });
   } catch (err) {
     console.error('createGallery error', err);
     res.status(500).json({ message: 'Server error' });

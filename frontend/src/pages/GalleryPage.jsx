@@ -16,9 +16,9 @@ export default function GalleryPage() {
       <h1 className="text-2xl font-semibold mb-4">Galeri</h1>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {data.map((g) => (
-          <figure key={g.id} className="overflow-hidden rounded shadow">
-            <img src={g.image_url} alt={g.caption || 'Galeri'} className="object-cover w-full h-48" />
-            {g.caption ? <figcaption className="p-2 text-sm">{g.caption}</figcaption> : null}
+          <figure key={g.id_galeri} className="overflow-hidden rounded shadow">
+            <img src={g.gambar} alt={g.keterangan || 'Galeri'} className="object-cover w-full h-48" />
+            {g.keterangan ? <figcaption className="p-2 text-sm">{g.keterangan}</figcaption> : null}
           </figure>
         ))}
       </div>

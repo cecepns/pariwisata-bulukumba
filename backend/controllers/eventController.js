@@ -6,12 +6,12 @@ export async function getAllEvents(req, res) {
   try {
     const rows = await query(
       `SELECT 
-         id_event AS id,
-         nama_event AS name,
-         deskripsi_event AS description,
-         tempat AS location,
-         tanggal_mulai AS event_date,
-         gambar_event AS image_url
+         id_event,
+         nama_event,
+         deskripsi_event,
+         tempat,
+         tanggal_mulai,
+         gambar_event
        FROM \`event\`
        ORDER BY tanggal_mulai DESC, id_event DESC`
     );
@@ -31,7 +31,7 @@ export async function createEvent(req, res) {
        VALUES (?, ?, ?, ?, ?, ?)`,
       [name, description || null, location || null, event_date || null, null, image_url || null]
     );
-    res.status(201).json({ id: result.insertId });
+    res.status(201).json({ id_event: result.insertId });
   } catch (err) {
     console.error('createEvent error', err);
     res.status(500).json({ message: 'Server error' });

@@ -31,7 +31,7 @@ export default function HomePage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {attractions.map((a) => (
-            <AttractionCard key={a.id} attraction={a} />
+            <AttractionCard key={a.id_wisata} attraction={a} />
           ))}
         </div>
       </section>
@@ -43,13 +43,13 @@ export default function HomePage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {events.map((e) => (
-            <div className="card bg-base-100 shadow" key={e.id}>
-              {e.image_url ? (
-                <figure><img src={e.image_url} alt={e.name} className="h-40 w-full object-cover" /></figure>
+            <div className="card bg-base-100 shadow" key={e.id_event}>
+              {e.gambar_event ? (
+                <figure><img src={e.gambar_event} alt={e.nama_event} className="h-40 w-full object-cover" /></figure>
               ) : null}
               <div className="card-body">
-                <h3 className="card-title text-base">{e.name}</h3>
-                <p className="text-sm opacity-80">{e.location || 'Bulukumba'} {e.event_date ? `• ${new Date(e.event_date).toLocaleDateString()}` : ''}</p>
+                <h3 className="card-title text-base">{e.nama_event}</h3>
+                <p className="text-sm opacity-80">{e.tempat || 'Bulukumba'} {e.tanggal_mulai ? `• ${new Date(e.tanggal_mulai).toLocaleDateString()}` : ''}</p>
               </div>
             </div>
           ))}

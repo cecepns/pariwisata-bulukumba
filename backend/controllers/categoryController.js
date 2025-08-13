@@ -6,10 +6,10 @@ export async function getAllCategories(req, res) {
   try {
     const rows = await query(
       `SELECT
-         id_kategori AS id,
-         nama_kategori AS name,
-         deskripsi AS description,
-         gambar AS image
+         id_kategori,
+         nama_kategori,
+         deskripsi,
+         gambar
        FROM kategori
        ORDER BY nama_kategori ASC`
     );

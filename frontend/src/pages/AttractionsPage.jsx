@@ -16,7 +16,7 @@ export default function AttractionsPage() {
     <div>
       <h1 className="text-2xl font-semibold mb-4">Objek Wisata</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {data.map((a) => <AttractionCard key={a.id} attraction={a} />)}
+        {data.map((a) => <AttractionCard key={a.id_wisata} attraction={a} />)}
       </div>
     </div>
   );

@@ -53,13 +53,13 @@ export default function FormAttraction() {
           const response = await api.get(`/admin/attractions/${id}`);
           const attraction = response.data;
           setForm({
-            id_kategori: attraction.category_id?.toString() || '',
-            nama_wisata: attraction.name || '',
-            deskripsi: attraction.description || '',
-            harga_tiket: attraction.ticket_price || '',
-            jam_operasional: attraction.operational_hours || '',
-            fasilitas: attraction.facilities || '',
-            peta_wisata: attraction.gmaps_iframe_url || '',
+            id_kategori: attraction.id_kategori?.toString() || '',
+            nama_wisata: attraction.nama_wisata || '',
+            deskripsi: attraction.deskripsi || '',
+            harga_tiket: attraction.harga_tiket || '',
+            jam_operasional: attraction.jam_operasional || '',
+            fasilitas: attraction.fasilitas || '',
+            peta_wisata: attraction.peta_wisata || '',
             keterangan: attraction.keterangan || '',
           });
         } catch (error) {
@@ -179,7 +179,7 @@ export default function FormAttraction() {
               onChange={(e) => setForm({ ...form, id_kategori: e.target.value })}
               options={categories.map(cat => {
                 console.log('Mapping category:', cat);
-                return { value: cat.id, label: cat.name };
+                return { value: cat.id_kategori, label: cat.nama_kategori };
               })}
               disabled={loadingCategories}
               required

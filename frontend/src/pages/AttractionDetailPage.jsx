@@ -17,21 +17,21 @@ export default function AttractionDetailPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold">{data.name}</h1>
-        {data.category_name ? <div className="badge badge-outline">{data.category_name}</div> : null}
+        <h1 className="text-3xl font-bold">{data.nama_wisata}</h1>
+        {data.nama_kategori ? <div className="badge badge-outline">{data.nama_kategori}</div> : null}
       </div>
 
       {data.cover_image_url ? (
-        <img src={data.cover_image_url} alt={data.name} className="w-full max-h-[420px] object-cover rounded" />
+        <img src={data.cover_image_url} alt={data.nama_wisata} className="w-full max-h-[420px] object-cover rounded" />
       ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-4">
-          <p className="leading-relaxed whitespace-pre-line">{data.description}</p>
-          {data.gmaps_iframe_url ? (
+          <p className="leading-relaxed whitespace-pre-line">{data.deskripsi}</p>
+          {data.peta_wisata ? (
             <div className="aspect-video w-full">
               <iframe
-                src={data.gmaps_iframe_url}
+                src={data.peta_wisata}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
@@ -45,27 +45,27 @@ export default function AttractionDetailPage() {
         </div>
 
         <aside className="space-y-3">
-          {data.ticket_price ? (
+          {data.harga_tiket ? (
             <div className="card bg-base-100 shadow">
               <div className="card-body">
                 <h3 className="card-title text-base">Harga Tiket</h3>
-                <p>{data.ticket_price}</p>
+                <p>{data.harga_tiket}</p>
               </div>
             </div>
           ) : null}
-          {data.operational_hours ? (
+          {data.jam_operasional ? (
             <div className="card bg-base-100 shadow">
               <div className="card-body">
                 <h3 className="card-title text-base">Jam Operasional</h3>
-                <p>{data.operational_hours}</p>
+                <p>{data.jam_operasional}</p>
               </div>
             </div>
           ) : null}
-          {data.facilities ? (
+          {data.fasilitas ? (
             <div className="card bg-base-100 shadow">
               <div className="card-body">
                 <h3 className="card-title text-base">Fasilitas</h3>
-                <p className="whitespace-pre-line">{data.facilities}</p>
+                <p className="whitespace-pre-line">{data.fasilitas}</p>
               </div>
             </div>
           ) : null}
