@@ -18,6 +18,7 @@ import {
 } from '../controllers/eventController.js';
 import {
   getAllGalleries,
+  getGalleryById,
   createGallery,
   updateGallery,
   deleteGallery,
@@ -50,6 +51,7 @@ router.get('/categories', getAllCategories);
 
 // Galleries
 router.get('/galleries', getAllGalleries);
+router.get('/galleries/:id', getGalleryById);
 router.post('/galleries', createGallery);
 router.put('/galleries/:id', updateGallery);
 router.delete('/galleries/:id', deleteGallery);

@@ -12,6 +12,7 @@ const DataTable = ({
   onEdit,
   onDelete,
   onView,
+  actions = [],
   ...props
 }) => {
   const handleAction = (action, item) => {
@@ -21,6 +22,8 @@ const DataTable = ({
       onDelete(item);
     } else if (action === 'view' && onView) {
       onView(item);
+    } else if (action.handler) {
+      action.handler(item);
     }
   };
 
@@ -65,7 +68,7 @@ const DataTable = ({
                 {column.title}
               </th>
             ))}
-            {(onEdit || onDelete || onView) && (
+            {(onEdit || onDelete || onView || actions.length > 0) && (
               <th className="text-center">Aksi</th>
             )}
           </tr>
@@ -73,8 +76,8 @@ const DataTable = ({
         <tbody>
           {data.length === 0 ? (
             <tr>
-              <td 
-                colSpan={columns.length + ((onEdit || onDelete || onView) ? 1 : 0)} 
+                              <td 
+                colSpan={columns.length + ((onEdit || onDelete || onView || actions.length > 0) ? 1 : 0)} 
                 className="text-center py-6 text-base-content/60"
               >
                 {emptyMessage}
@@ -88,7 +91,7 @@ const DataTable = ({
                     {renderCell(column, item)}
                   </td>
                 ))}
-                {(onEdit || onDelete || onView) && (
+                {(onEdit || onDelete || onView || actions.length > 0) && (
                   <td className="space-x-2 text-center">
                     {onView && (
                       <Button
@@ -117,6 +120,16 @@ const DataTable = ({
                         Hapus
                       </Button>
                     )}
+                    {actions.map((action, index) => (
+                      <Button
+                        key={index}
+                        size="xs"
+                        variant={action.variant || "primary"}
+                        onClick={() => handleAction(action, item)}
+                      >
+                        {action.label}
+                      </Button>
+                    ))}
                   </td>
                 )}
               </tr>

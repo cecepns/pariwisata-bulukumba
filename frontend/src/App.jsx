@@ -11,6 +11,8 @@ import AdminLoginPage from './pages/AdminLoginPage.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import ManageAttractions from './pages/admin/ManageAttractions.jsx';
 import FormAttraction from './pages/admin/FormAttraction.jsx';
+import ManageGallery from './pages/admin/ManageGallery.jsx';
+import FormGallery from './pages/admin/FormGallery.jsx';
 
 /**
  * ANCHOR: App
@@ -33,6 +35,9 @@ export default function App() {
         <Route path="/admin/attractions" element={<ManageAttractions />} />
         <Route path="/admin/attractions/new" element={<FormAttraction />} />
         <Route path="/admin/attractions/:id/edit" element={<FormAttraction />} />
+        <Route path="/admin/galleries" element={<ManageGallery />} />
+        <Route path="/admin/galleries/new" element={<FormGallery />} />
+        <Route path="/admin/galleries/:id/edit" element={<FormGallery />} />
       </Route>
     </Routes>
   );

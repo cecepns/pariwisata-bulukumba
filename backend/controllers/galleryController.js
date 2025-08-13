@@ -10,8 +10,9 @@ export async function getAllGalleries(req, res) {
          g.id_wisata,
          g.gambar,
          g.keterangan,
-         g.nama
+         w.nama_wisata
        FROM galeri g
+       LEFT JOIN wisata w ON g.id_wisata = w.id_wisata
        ORDER BY g.id_galeri DESC`
     );
     res.json(rows);
@@ -23,12 +24,12 @@ export async function getAllGalleries(req, res) {
 
 export async function createGallery(req, res) {
   try {
-    const { id_wisata, image_url, caption, nama } = req.body || {};
+    const { id_wisata, gambar, keterangan } = req.body || {};
     if (!id_wisata) return res.status(400).json({ message: 'id_wisata is required' });
-    if (!image_url) return res.status(400).json({ message: 'image_url is required' });
+    if (!gambar) return res.status(400).json({ message: 'gambar is required' });
     const result = await query(
-      `INSERT INTO galeri (id_wisata, gambar, keterangan, nama) VALUES (?, ?, ?, ?)`,
-      [id_wisata, image_url, caption || null, nama || null]
+      `INSERT INTO galeri (id_wisata, gambar, keterangan) VALUES (?, ?, ?)`,
+      [id_wisata, gambar, keterangan || null]
     );
     res.status(201).json({ id_galeri: result.insertId });
   } catch (err) {
@@ -40,26 +41,55 @@ export async function createGallery(req, res) {
 export async function updateGallery(req, res) {
   try {
     const { id } = req.params;
-    const map = {
-      id_wisata: 'id_wisata',
-      image_url: 'gambar',
-      caption: 'keterangan',
-      nama: 'nama',
-    };
+    const { id_wisata, gambar, keterangan } = req.body;
+    
     const updates = [];
     const params = [];
-    for (const [apiField, column] of Object.entries(map)) {
-      if (Object.prototype.hasOwnProperty.call(req.body, apiField)) {
-        updates.push(`${column} = ?`);
-        params.push(req.body[apiField]);
-      }
+    
+    if (id_wisata !== undefined) {
+      updates.push('id_wisata = ?');
+      params.push(id_wisata);
     }
+    if (gambar !== undefined) {
+      updates.push('gambar = ?');
+      params.push(gambar);
+    }
+    if (keterangan !== undefined) {
+      updates.push('keterangan = ?');
+      params.push(keterangan);
+    }
+    
     if (updates.length === 0) return res.status(400).json({ message: 'No fields to update' });
     params.push(id);
     await query(`UPDATE galeri SET ${updates.join(', ')} WHERE id_galeri = ?`, params);
     res.json({ message: 'Updated' });
   } catch (err) {
     console.error('updateGallery error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+export async function getGalleryById(req, res) {
+  try {
+    const { id } = req.params;
+    const rows = await query(
+      `SELECT 
+         g.id_galeri,
+         g.id_wisata,
+         g.gambar,
+         g.keterangan
+       FROM galeri g
+       WHERE g.id_galeri = ?`,
+      [id]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Gallery not found' });
+    }
+    
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('getGalleryById error', err);
     res.status(500).json({ message: 'Server error' });
   }
 }

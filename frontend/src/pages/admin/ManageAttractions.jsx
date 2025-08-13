@@ -33,6 +33,10 @@ export default function ManageAttractions() {
     navigate(`/admin/attractions/${item.id_wisata}/edit`);
   }
 
+  function handleManageGallery(item) {
+    navigate(`/admin/galleries?wisata=${item.id_wisata}`);
+  }
+
   const columns = [
     { key: 'id_wisata', title: 'ID' },
     { key: 'nama_wisata', title: 'Nama Wisata' },
@@ -59,6 +63,13 @@ export default function ManageAttractions() {
           setSelectedItem(item);
           setShowDeleteModal(true);
         }}
+        actions={[
+          {
+            label: 'Kelola Galeri',
+            variant: 'info',
+            handler: handleManageGallery
+          }
+        ]}
       />
 
       <Modal.Confirm
