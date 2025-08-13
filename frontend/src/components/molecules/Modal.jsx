@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import Button from '../atoms/Button';
-import Card from '../atoms/Card';
 
 const Modal = ({
   isOpen,
@@ -14,11 +13,11 @@ const Modal = ({
   ...props
 }) => {
   const sizes = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    full: 'max-w-full mx-4'
+    sm: 'modal-box w-11/12 max-w-md',
+    md: 'modal-box w-11/12 max-w-lg',
+    lg: 'modal-box w-11/12 max-w-2xl',
+    xl: 'modal-box w-11/12 max-w-4xl',
+    full: 'modal-box w-11/12 max-w-full'
   };
 
   useEffect(() => {
@@ -30,11 +29,13 @@ const Modal = ({
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
+      // Restore body scroll when modal is closed
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
@@ -48,18 +49,31 @@ const Modal = ({
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+    <dialog 
+      className={`modal ${isOpen ? 'modal-open' : ''}`}
       onClick={handleOverlayClick}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        margin: 0,
+        padding: 0,
+        border: 'none',
+        background: 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(4px)',
+        zIndex: 9999
+      }}
+      {...props}
     >
-      <Card 
-        className={`w-full ${sizes[size] || sizes.md} max-h-[90vh] overflow-y-auto ${className}`}
-        {...props}
-      >
+      <div className={`${sizes[size] || sizes.md} ${className}`}>
         {(title || showCloseButton) && (
-          <Card.Header className="flex items-center justify-between border-b border-base-content/10 pb-4">
+          <div className="flex items-center justify-between pb-4">
             {title && (
-              <h2 className="text-xl font-semibold text-base-content">{title}</h2>
+              <h3 className="text-lg font-bold">{title}</h3>
             )}
             {showCloseButton && (
               <Button
@@ -71,20 +85,20 @@ const Modal = ({
                 ✕
               </Button>
             )}
-          </Card.Header>
+          </div>
         )}
         
-        <Card.Body className="pt-4">
+        <div className="pt-4">
           {children}
-        </Card.Body>
-      </Card>
-    </div>
+        </div>
+      </div>
+    </dialog>
   );
 };
 
 // Modal Footer Component
 Modal.Footer = ({ children, className = '', ...props }) => (
-  <div className={`flex justify-end space-x-3 pt-4 border-t border-base-content/10 ${className}`} {...props}>
+  <div className={`flex justify-end space-x-3 pt-4 ${className}`} {...props}>
     {children}
   </div>
 );
