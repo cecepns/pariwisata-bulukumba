@@ -10,6 +10,7 @@ import GalleryPage from './pages/GalleryPage.jsx';
 import AdminLoginPage from './pages/AdminLoginPage.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import ManageAttractions from './pages/admin/ManageAttractions.jsx';
+import CreateAttraction from './pages/admin/CreateAttraction.jsx';
 
 /**
  * ANCHOR: App
@@ -30,6 +31,7 @@ export default function App() {
       <Route element={<AdminLayout />}>
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/attractions" element={<ManageAttractions />} />
+        <Route path="/admin/attractions/new" element={<CreateAttraction />} />
       </Route>
     </Routes>
   );

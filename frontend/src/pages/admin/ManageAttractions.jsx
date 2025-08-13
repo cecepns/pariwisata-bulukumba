@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api.js';
 
 const emptyForm = {
@@ -25,12 +26,6 @@ export default function ManageAttractions() {
   }
 
   useEffect(() => { load(); }, []);
-
-  function openCreate() {
-    setEditingId(null);
-    setForm(emptyForm);
-    dialogRef.current?.showModal();
-  }
 
   function openEdit(item) {
     setEditingId(item.id);
@@ -69,7 +64,7 @@ export default function ManageAttractions() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Kelola Objek Wisata</h1>
-        <button className="btn btn-soft btn-primary text-white" onClick={openCreate}>Tambah</button>
+        <Link to="/admin/attractions/new" className="btn btn-soft btn-primary text-white">Tambah</Link>
       </div>
 
       {loading ? (
