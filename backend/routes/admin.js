@@ -21,6 +21,7 @@ import {
   updateGallery,
   deleteGallery,
 } from '../controllers/galleryController.js';
+import { getAllCategories } from '../controllers/categoryController.js';
 
 const router = Router();
 
@@ -41,6 +42,9 @@ router.get('/events', getAllEvents);
 router.post('/events', createEvent);
 router.put('/events/:id', updateEvent);
 router.delete('/events/:id', deleteEvent);
+
+// Categories
+router.get('/categories', getAllCategories);
 
 // Galleries
 router.get('/galleries', getAllGalleries);

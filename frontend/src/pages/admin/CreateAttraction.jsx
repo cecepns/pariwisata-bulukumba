@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api.js';
 
@@ -21,6 +21,23 @@ export default function CreateAttraction() {
   const navigate = useNavigate();
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const response = await api.get('/admin/categories');
+        setCategories(response.data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    }
+    fetchCategories();
+  }, []);
 
   /**
    * ANCHOR: handleSubmit
@@ -58,13 +75,19 @@ export default function CreateAttraction() {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             required
           />
-          <input
-            type="number"
-            placeholder="ID Kategori (opsional)"
-            className="input input-bordered w-full"
+          <select
+            className="select select-bordered w-full"
             value={form.category_id}
             onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-          />
+            disabled={loadingCategories}
+          >
+            <option value="">Pilih Kategori (opsional)</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
           <textarea
             placeholder="Deskripsi"
             className="textarea textarea-bordered w-full"
