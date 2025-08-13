@@ -5,6 +5,7 @@ import { login } from '../controllers/adminController.js';
 import { requireAuth } from '../middleware/auth.js';
 import {
   getAllAttractions,
+  getAttractionById,
   createAttraction,
   updateAttraction,
   deleteAttraction,
@@ -33,6 +34,7 @@ router.use(requireAuth);
 
 // Attractions
 router.get('/attractions', getAllAttractions);
+router.get('/attractions/:id', getAttractionById);
 router.post('/attractions', createAttraction);
 router.put('/attractions/:id', updateAttraction);
 router.delete('/attractions/:id', deleteAttraction);

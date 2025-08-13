@@ -41,6 +41,7 @@ export async function getAttractionById(req, res) {
          w.jam_operasional AS operational_hours,
          w.fasilitas AS facilities,
          w.peta_wisata AS gmaps_iframe_url,
+         w.keterangan AS keterangan,
          (SELECT gg.gambar FROM galeri gg WHERE gg.id_wisata = w.id_wisata ORDER BY gg.id_galeri ASC LIMIT 1) AS cover_image_url
        FROM wisata w
        LEFT JOIN kategori k ON k.id_kategori = w.id_kategori
@@ -106,6 +107,7 @@ export async function updateAttraction(req, res) {
       operational_hours: 'jam_operasional',
       facilities: 'fasilitas',
       gmaps_iframe_url: 'peta_wisata',
+      keterangan: 'keterangan',
     };
 
     const updates = [];

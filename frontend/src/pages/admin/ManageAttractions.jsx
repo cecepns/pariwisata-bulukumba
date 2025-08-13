@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api.js';
 import { DataTable, Button, Modal } from '../../components';
 
 export default function ManageAttractions() {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,8 +17,6 @@ export default function ManageAttractions() {
     load(); 
   }, []);
 
-
-
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -28,11 +27,14 @@ export default function ManageAttractions() {
     setSelectedItem(null);
   }
 
+  function handleEdit(item) {
+    navigate(`/admin/attractions/${item.id}/edit`);
+  }
+
   const columns = [
     { key: 'id', title: 'ID' },
     { key: 'name', title: 'Nama' },
-    { key: 'category_name', title: 'Kategori' },
-    { key: 'status', title: 'Status', type: 'badge', badgeVariant: 'status' }
+    { key: 'category_name', title: 'Kategori' }
   ];
 
   return (
@@ -48,6 +50,7 @@ export default function ManageAttractions() {
         data={data}
         columns={columns}
         loading={loading}
+        onEdit={handleEdit}
         onDelete={(item) => {
           setSelectedItem(item);
           setShowDeleteModal(true);
