@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api.js';
+import { DataTable, Button, Modal } from '../../components';
 
 export default function ManageAttractions() {
   const [data, setData] = useState([]);
@@ -17,53 +18,55 @@ export default function ManageAttractions() {
 
 
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
   async function handleDelete(id) {
-    if (!confirm('Hapus data ini?')) return;
     await api.delete(`/admin/attractions/${id}`);
     load();
+    setShowDeleteModal(false);
+    setSelectedItem(null);
   }
+
+  const columns = [
+    { key: 'id', title: 'ID' },
+    { key: 'name', title: 'Nama' },
+    { key: 'category_name', title: 'Kategori' },
+    { key: 'status', title: 'Status', type: 'badge', badgeVariant: 'status' }
+  ];
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Kelola Objek Wisata</h1>
-        <Link to="/admin/attractions/new" className="btn btn-soft btn-primary text-white">Tambah</Link>
+        <Link to="/admin/attractions/new">
+          <Button variant="soft">Tambah</Button>
+        </Link>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-10"><span className="loading loading-spinner" /></div>
-      ) : (
-        <div className="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nama</th>
-                <th>Kategori</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="text-center py-6 text-base-content/60">Tidak ada data</td>
-                </tr>
-              ) : (
-                data.map((a) => (
-                  <tr key={a.id}>
-                    <td>{a.id}</td>
-                    <td>{a.name}</td>
-                    <td>{a.category_name || '-'}</td>
-                    <td className="space-x-2">
-                      <button className="btn btn-xs btn-error" onClick={() => handleDelete(a.id)}>Hapus</button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        data={data}
+        columns={columns}
+        loading={loading}
+        onDelete={(item) => {
+          setSelectedItem(item);
+          setShowDeleteModal(true);
+        }}
+      />
+
+      <Modal.Confirm
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedItem(null);
+        }}
+        onConfirm={() => handleDelete(selectedItem?.id)}
+        title="Hapus Objek Wisata"
+        message={`Apakah Anda yakin ingin menghapus "${selectedItem?.name}"?`}
+        confirmText="Hapus"
+        cancelText="Batal"
+        variant="error"
+      />
     </div>
   );
 }
