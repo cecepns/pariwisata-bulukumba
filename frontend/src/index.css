@@ -6,4 +6,8 @@ html, body, #root {
   height: 100%;
 }
 
-
+/* Google Maps iframe styling */
+iframe {
+  width: 100% !important;
+  height: 100% !important;
+}
