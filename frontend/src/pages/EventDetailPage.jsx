@@ -50,7 +50,7 @@ export default function EventDetailPage() {
 
   if (error || !event) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto">
         <div className="text-center">
           <div className="max-w-md mx-auto">
             <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,7 +70,7 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto">
       {/* Breadcrumb */}
       <div className="text-sm breadcrumbs mb-6">
         <ul>
@@ -118,7 +118,7 @@ export default function EventDetailPage() {
           {event.deskripsi_event && (
             <div className="prose max-w-none">
               <h3 className="text-xl font-semibold mb-3">Deskripsi Event</h3>
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-50 p-4 p-4 shadow rounded-lg">
                 <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                   {event.deskripsi_event}
                 </p>
@@ -131,7 +131,7 @@ export default function EventDetailPage() {
         <div className="space-y-6">
           {/* Event Details Card */}
           <div className="card bg-base-100 shadow-lg">
-            <div className="card-body">
+            <div className="card-body p-4">
               <h3 className="card-title text-lg mb-4">Informasi Event</h3>
               
               {/* Venue */}

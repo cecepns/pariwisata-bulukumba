@@ -62,7 +62,7 @@ export default function AttractionDetailPage() {
 
   if (error || !data) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto">
         <div className="text-center">
           <div className="max-w-md mx-auto">
             <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,7 +82,7 @@ export default function AttractionDetailPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto">
       {/* Breadcrumb */}
       <div className="text-sm breadcrumbs mb-6">
         <ul>
@@ -133,7 +133,7 @@ export default function AttractionDetailPage() {
           {data.deskripsi && (
             <div className="prose max-w-none">
               <h3 className="text-xl font-semibold mb-3">Deskripsi Destinasi</h3>
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-50 p-4 shadow rounded-lg">
                 <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                   {data.deskripsi}
                 </p>
@@ -145,7 +145,7 @@ export default function AttractionDetailPage() {
           {data.peta_wisata && (
             <div className="prose max-w-none">
               <h3 className="text-xl font-semibold mb-3">Peta Lokasi</h3>
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-50 rounded-lg">
                 <div 
                   className="aspect-video w-full"
                   dangerouslySetInnerHTML={{ __html: data.peta_wisata }}
@@ -159,7 +159,7 @@ export default function AttractionDetailPage() {
         <div className="space-y-6">
           {/* Attraction Details Card */}
           <div className="card bg-base-100 shadow-lg">
-            <div className="card-body">
+            <div className="card-body p-4">
               <h3 className="card-title text-lg mb-4">Informasi Destinasi</h3>
               
               {/* Ticket Price */}
@@ -228,7 +228,7 @@ export default function AttractionDetailPage() {
       </div>
 
       {/* Gallery Section */}
-      <div className="space-y-6">
+      <div className="space-y-6 mt-4">
         <h2 className="text-2xl font-bold text-gray-900">Galeri Foto</h2>
         {galleryLoading ? (
           <div className="flex justify-center py-8">

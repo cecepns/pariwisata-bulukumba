@@ -23,7 +23,7 @@ export default function HomePage() {
     <div className="space-y-8 md:space-y-12">
       {/* Hero Section with Background Image */}
       <section 
-        className="relative min-h-[80vh] md:min-h-screen flex items-center justify-center text-center rounded-2xl md:rounded-3xl overflow-hidden mx-2 md:mx-4 my-4 md:my-8"
+        className="relative min-h-[80vh] md:min-h-screen flex items-center justify-center text-center rounded-2xl md:rounded-3xl overflow-hidden "
         style={{
           backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80")',
           backgroundSize: 'cover',
@@ -65,7 +65,7 @@ export default function HomePage() {
       </section>
 
       {/* Destinasi Unggulan Section */}
-      <section className="px-4 md:px-6">
+      <section>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6 md:mb-8">
           <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold">Destinasi Unggulan</h2>
           <Link to="/attractions" className="link link-primary text-sm md:text-base">Lihat semua</Link>
