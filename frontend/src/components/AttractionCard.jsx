@@ -6,7 +6,7 @@ export default function AttractionCard({ attraction }) {
   const shortDesc = description.length > 120 ? description.slice(0, 120) + '…' : description;
   
   return (
-    <div className="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer">
+    <div className="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer overflow-hidden">
       <Link to={`/attractions/${attraction.id_wisata}`} className="block">
         {attraction.cover_image_url ? (
           <figure>

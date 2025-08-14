@@ -15,7 +15,7 @@ export default function EventCard({ event }) {
   };
 
   return (
-    <div className="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer">
+    <div className="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer overflow-hidden">
       <Link to={`/events/${event.id_event}`} className="block">
         {event.gambar_event ? (
           <figure>
