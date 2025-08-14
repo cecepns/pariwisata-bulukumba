@@ -23,7 +23,13 @@ import {
   updateGallery,
   deleteGallery,
 } from '../controllers/galleryController.js';
-import { getAllCategories } from '../controllers/categoryController.js';
+import { 
+  getAllCategories, 
+  getCategoryById, 
+  createCategory, 
+  updateCategory, 
+  deleteCategory 
+} from '../controllers/categoryController.js';
 import { uploadImage, handleImageUpload } from '../controllers/uploadController.js';
 
 const router = Router();
@@ -49,6 +55,10 @@ router.delete('/events/:id', deleteEvent);
 
 // Categories
 router.get('/categories', getAllCategories);
+router.get('/categories/:id', getCategoryById);
+router.post('/categories', createCategory);
+router.put('/categories/:id', updateCategory);
+router.delete('/categories/:id', deleteCategory);
 
 // Upload
 router.post('/upload-image', uploadImage, handleImageUpload);

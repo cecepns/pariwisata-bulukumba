@@ -13,6 +13,8 @@ import ManageAttractions from './pages/admin/ManageAttractions.jsx';
 import FormAttraction from './pages/admin/FormAttraction.jsx';
 import ManageGallery from './pages/admin/ManageGallery.jsx';
 import FormGallery from './pages/admin/FormGallery.jsx';
+import ManageCategories from './pages/admin/ManageCategories.jsx';
+import FormCategory from './pages/admin/FormCategory.jsx';
 
 /**
  * ANCHOR: App
@@ -38,6 +40,9 @@ export default function App() {
         <Route path="/admin/attractions/:wisataId/galleries" element={<ManageGallery />} />
         <Route path="/admin/attractions/:wisataId/galleries/new" element={<FormGallery />} />
         <Route path="/admin/attractions/:wisataId/galleries/:id/edit" element={<FormGallery />} />
+        <Route path="/admin/categories" element={<ManageCategories />} />
+        <Route path="/admin/categories/new" element={<FormCategory />} />
+        <Route path="/admin/categories/:id/edit" element={<FormCategory />} />
       </Route>
     </Routes>
   );
