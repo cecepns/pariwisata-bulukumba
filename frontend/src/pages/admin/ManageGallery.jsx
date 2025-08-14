@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api.js';
 import { Button, Modal } from '../../components';
+import { getImageUrl } from '../../utils/imageUrl.js';
 
 export default function ManageGallery() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function ManageGallery() {
     // Load galleries filtered by wisataId
     api.get('/admin/galleries').then((res) => {
       const filteredData = res.data.filter(item => item.id_wisata == wisataId);
+      console.log('Gallery data:', filteredData);
       setData(filteredData);
     }).finally(() => setLoading(false));
   }
@@ -58,17 +60,12 @@ export default function ManageGallery() {
               ← Kembali
             </Button>
             <h1 className="text-2xl font-semibold">
-              Kelola Galeri
+              Galeri {wisataInfo ? `${wisataInfo.nama_wisata}` : ''}
             </h1>
           </div>
-          {wisataInfo && (
-            <p className="text-sm text-base-content/60 mt-1">
-              {wisataInfo.nama_wisata}
-            </p>
-          )}
         </div>
         <Link to={`/admin/attractions/${wisataId}/galleries/new`}>
-          <Button variant="soft">Tambah Galeri</Button>
+          <Button variant="soft">Tambah Gambar</Button>
         </Link>
       </div>
 
@@ -78,7 +75,7 @@ export default function ManageGallery() {
         </div>
       ) : data.length === 0 ? (
         <div className="text-center py-10 text-base-content/60">
-          Tidak ada galeri ditemukan
+          Tidak ada gambar ditemukan
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -86,9 +83,17 @@ export default function ManageGallery() {
             <div key={item.id_galeri} className="group relative">
               <div className="aspect-square overflow-hidden rounded-lg border border-base-content/10 bg-base-200">
                 <img
-                  src={item.gambar}
-                  alt={item.keterangan || 'Galeri'}
+                  src={(() => {
+                    const url = getImageUrl(item.gambar);
+                    console.log('Image URL for', item.gambar, '→', url);
+                    return url;
+                  })()}
+                  alt={item.keterangan || 'Gambar'}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  onError={(e) => {
+                    console.log('Image failed to load:', e.target.src);
+                    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzZiNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkdhbWJhciB0aWRhayBkYXBhdCBkaW11YXQ8L3RleHQ+PC9zdmc+';
+                  }}
                 />
                 
                 {/* Overlay dengan keterangan */}
@@ -133,10 +138,7 @@ export default function ManageGallery() {
                   </div>
                 </div>
 
-                {/* ID badge */}
-                <div className="absolute top-2 left-2">
-                  <span className="badge badge-neutral badge-xs">#{item.id_galeri}</span>
-                </div>
+
               </div>
             </div>
           ))}
@@ -150,8 +152,8 @@ export default function ManageGallery() {
           setSelectedItem(null);
         }}
         onConfirm={() => handleDelete(selectedItem?.id_galeri)}
-        title="Hapus Galeri"
-        message={`Apakah Anda yakin ingin menghapus galeri ini?`}
+        title="Hapus Gambar"
+        message={`Apakah Anda yakin ingin menghapus gambar ini?`}
         confirmText="Hapus"
         cancelText="Batal"
         variant="error"

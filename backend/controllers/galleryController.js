@@ -1,6 +1,12 @@
 // ANCHOR: Galleries controller
 // Provides public fetch and admin CRUD for gallery items (mapped to table `galeri`).
 import { query } from '../config.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function getAllGalleries(req, res) {
   try {
@@ -44,6 +50,15 @@ export async function updateGallery(req, res) {
     const { id } = req.params;
     const { id_wisata, gambar, keterangan, nama } = req.body;
     
+    // If updating image, get the old image path to delete it later
+    let oldImagePath = null;
+    if (gambar !== undefined) {
+      const oldData = await query('SELECT gambar FROM galeri WHERE id_galeri = ?', [id]);
+      if (oldData.length > 0) {
+        oldImagePath = oldData[0].gambar;
+      }
+    }
+    
     const updates = [];
     const params = [];
     
@@ -67,7 +82,23 @@ export async function updateGallery(req, res) {
     if (updates.length === 0) return res.status(400).json({ message: 'No fields to update' });
     params.push(id);
     await query(`UPDATE galeri SET ${updates.join(', ')} WHERE id_galeri = ?`, params);
-    res.json({ message: 'Updated' });
+    
+    // Delete old image file if it was updated and it's a local file
+    if (oldImagePath && gambar !== undefined && oldImagePath !== gambar && oldImagePath.startsWith('/uploads/')) {
+      const fullPath = path.join(__dirname, '../uploads', path.basename(oldImagePath));
+      
+      if (fs.existsSync(fullPath)) {
+        try {
+          fs.unlinkSync(fullPath);
+          console.log(`Deleted old file: ${fullPath}`);
+        } catch (fileErr) {
+          console.error('Error deleting old file:', fileErr);
+          // Don't fail the request if file deletion fails
+        }
+      }
+    }
+    
+    res.json({ message: 'Updated successfully' });
   } catch (err) {
     console.error('updateGallery error', err);
     res.status(500).json({ message: 'Server error' });
@@ -103,8 +134,36 @@ export async function getGalleryById(req, res) {
 export async function deleteGallery(req, res) {
   try {
     const { id } = req.params;
+    
+    // First, get the gallery data to know which file to delete
+    const galleryData = await query('SELECT gambar FROM galeri WHERE id_galeri = ?', [id]);
+    
+    if (galleryData.length === 0) {
+      return res.status(404).json({ message: 'Gallery not found' });
+    }
+    
+    const imagePath = galleryData[0].gambar;
+    
+    // Delete from database first
     await query('DELETE FROM galeri WHERE id_galeri = ?', [id]);
-    res.json({ message: 'Deleted' });
+    
+    // If the image path is a local file (starts with /uploads/), delete the physical file
+    if (imagePath && imagePath.startsWith('/uploads/')) {
+      const fullPath = path.join(__dirname, '../uploads', path.basename(imagePath));
+      
+      // Check if file exists and delete it
+      if (fs.existsSync(fullPath)) {
+        try {
+          fs.unlinkSync(fullPath);
+          console.log(`Deleted file: ${fullPath}`);
+        } catch (fileErr) {
+          console.error('Error deleting file:', fileErr);
+          // Don't fail the request if file deletion fails
+        }
+      }
+    }
+    
+    res.json({ message: 'Gallery and associated file deleted successfully' });
   } catch (err) {
     console.error('deleteGallery error', err);
     res.status(500).json({ message: 'Server error' });

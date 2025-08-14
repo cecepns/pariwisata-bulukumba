@@ -65,7 +65,7 @@ export default function ManageAttractions() {
         }}
         actions={[
           {
-            label: 'Kelola Galeri',
+            label: 'Kelola Gambar',
             variant: 'info',
             handler: handleManageGallery
           }

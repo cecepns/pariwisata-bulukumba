@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api.js';
 import { Button, Input, Textarea } from '../../components';
+import { getImageUrl } from '../../utils/imageUrl.js';
 
 export default function FormGallery() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function FormGallery() {
         setFormData(res.data);
         // Set preview URL for existing image
         if (res.data.gambar) {
-          setPreviewUrl(res.data.gambar);
+          setPreviewUrl(getImageUrl(res.data.gambar));
         }
       });
     }
@@ -101,7 +102,7 @@ export default function FormGallery() {
       navigate(`/admin/attractions/${wisataId}/galleries`);
     } catch (error) {
       console.error('Error saving gallery:', error);
-      alert('Terjadi kesalahan saat menyimpan galeri');
+      alert('Terjadi kesalahan saat menyimpan gambar');
     } finally {
       setLoading(false);
     }
@@ -127,7 +128,7 @@ export default function FormGallery() {
             ← Kembali
           </Button>
           <h1 className="text-2xl font-semibold">
-            {isEdit ? 'Edit Galeri' : 'Tambah Galeri'}
+            {isEdit ? 'Edit Gambar' : 'Tambah Gambar'}
           </h1>
         </div>
         {wisataInfo && (
@@ -140,13 +141,13 @@ export default function FormGallery() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="label">
-            <span className="label-text">Nama Galeri</span>
+            <span className="label-text">Nama Gambar</span>
           </label>
           <Input
             name="nama"
             value={formData.nama}
             onChange={handleChange}
-            placeholder="Masukkan nama galeri"
+            placeholder="Masukkan nama gambar"
           />
         </div>
 
@@ -159,10 +160,13 @@ export default function FormGallery() {
             accept="image/*"
             onChange={handleFileChange}
             className="file-input file-input-bordered w-full"
-            required={!isEdit || !formData.gambar}
+            required={!isEdit}
           />
           <div className="label">
-            <span className="label-text-alt">Format: JPG, PNG, GIF, WEBP (Maksimal 5MB)</span>
+            <span className="label-text-alt">
+              Format: JPG, PNG, GIF, WEBP (Maksimal 5MB)
+              {isEdit && ' • Kosongkan jika tidak ingin mengubah gambar'}
+            </span>
           </div>
           
           {previewUrl && (
