@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { getImageUrl } from '../utils/imageUrl.js';
 
 export default function AttractionCard({ attraction }) {
   const description = attraction.deskripsi || '';
@@ -6,8 +7,23 @@ export default function AttractionCard({ attraction }) {
   return (
     <div className="card bg-base-100 shadow">
       {attraction.cover_image_url ? (
-        <figure><img src={attraction.cover_image_url} alt={attraction.nama_wisata} className="h-48 w-full object-cover" /></figure>
-      ) : null}
+        <figure>
+          <img 
+            src={getImageUrl(attraction.cover_image_url)} 
+            alt={attraction.nama_wisata} 
+            className="h-48 w-full object-cover"
+            onError={(e) => {
+              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzZiNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkdhbWJhciB0aWRhayBkYXBhdCBkaW11YXQ8L3RleHQ+PC9zdmc+';
+            }}
+          />
+        </figure>
+      ) : (
+        <figure>
+          <div className="h-48 w-full bg-gray-200 flex items-center justify-center">
+            <span className="text-gray-500 text-sm">Tidak ada gambar</span>
+          </div>
+        </figure>
+      )}
       <div className="card-body">
         <h2 className="card-title">{attraction.nama_wisata}</h2>
         <p className="text-sm opacity-80">{shortDesc}</p>
