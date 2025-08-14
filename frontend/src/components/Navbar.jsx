@@ -68,7 +68,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-base-100 border-b border-gray-200 shadow-lg z-50">
+        <div  style={{ top: '65px'}} className="md:hidden absolute top-full left-0 right-0 bg-base-100 border-b border-gray-200 shadow-lg z-50">
           <ul className="menu menu-vertical px-4 py-2">
             <li>
               <NavLink 
