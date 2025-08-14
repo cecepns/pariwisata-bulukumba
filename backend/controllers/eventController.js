@@ -50,12 +50,12 @@ export async function getEventById(req, res) {
 
 export async function createEvent(req, res) {
   try {
-    const { name, description, event_date, location, image_url } = req.body || {};
+    const { name, description, event_date, end_date, location, image_url } = req.body || {};
     if (!name) return res.status(400).json({ message: 'Name is required' });
     const result = await query(
       `INSERT INTO \`event\` (nama_event, deskripsi_event, tempat, tanggal_mulai, tanggal_selesai, gambar_event)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [name, description || null, location || null, event_date || null, null, image_url || null]
+      [name, description || null, location || null, event_date || null, end_date || null, image_url || null]
     );
     res.status(201).json({ id_event: result.insertId });
   } catch (err) {
@@ -72,6 +72,7 @@ export async function updateEvent(req, res) {
       description: 'deskripsi_event',
       location: 'tempat',
       event_date: 'tanggal_mulai',
+      end_date: 'tanggal_selesai',
       image_url: 'gambar_event',
     };
     const updates = [];

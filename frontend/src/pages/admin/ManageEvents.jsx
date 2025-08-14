@@ -47,13 +47,26 @@ export default function ManageEvents() {
     });
   }
 
+  // Format date range for display
+  function formatDateRange(startDate, endDate) {
+    const start = formatDate(startDate);
+    const end = formatDate(endDate);
+    
+    if (start === '-' && end === '-') return '-';
+    if (start === '-') return `Sampai ${end}`;
+    if (end === '-') return start;
+    if (start === end) return start;
+    
+    return `${start} - ${end}`;
+  }
+
   const columns = [
     { key: 'id_event', title: 'ID' },
     { key: 'nama_event', title: 'Nama Event' },
     { 
       key: 'tanggal_mulai', 
-      title: 'Tanggal', 
-      render: (value) => formatDate(value)
+      title: 'Tanggal Event', 
+      render: (value, row) => formatDateRange(value, row.tanggal_selesai)
     },
     { key: 'tempat', title: 'Tempat' },
     { 

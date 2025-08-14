@@ -9,6 +9,7 @@ const emptyForm = {
   deskripsi_event: '',
   tempat: '',
   tanggal_mulai: '',
+  tanggal_selesai: '',
   gambar_event: '',
 };
 
@@ -36,6 +37,7 @@ export default function FormEvent() {
             deskripsi_event: event.deskripsi_event || '',
             tempat: event.tempat || '',
             tanggal_mulai: event.tanggal_mulai ? event.tanggal_mulai.split('T')[0] : '',
+            tanggal_selesai: event.tanggal_selesai ? event.tanggal_selesai.split('T')[0] : '',
             gambar_event: event.gambar_event || '',
           });
         } catch (error) {
@@ -63,6 +65,7 @@ export default function FormEvent() {
         description: form.deskripsi_event,
         location: form.tempat,
         event_date: form.tanggal_mulai,
+        end_date: form.tanggal_selesai,
         image_url: form.gambar_event,
       };
 
@@ -134,11 +137,19 @@ export default function FormEvent() {
             />
 
             <Form.Input
-              label="Tanggal Event"
+              label="Tanggal Mulai Event"
               type="date"
               value={form.tanggal_mulai}
               onChange={(e) => setForm({ ...form, tanggal_mulai: e.target.value })}
-              helperText="Tanggal pelaksanaan event"
+              helperText="Tanggal mulai pelaksanaan event"
+            />
+
+            <Form.Input
+              label="Tanggal Selesai Event"
+              type="date"
+              value={form.tanggal_selesai}
+              onChange={(e) => setForm({ ...form, tanggal_selesai: e.target.value })}
+              helperText="Tanggal selesai pelaksanaan event (opsional untuk event 1 hari)"
             />
 
             <Form.Input
