@@ -22,6 +22,32 @@ export async function getAllEvents(req, res) {
   }
 }
 
+export async function getEventById(req, res) {
+  try {
+    const { id } = req.params;
+    const rows = await query(
+      `SELECT 
+         id_event,
+         nama_event,
+         deskripsi_event,
+         tempat,
+         tanggal_mulai,
+         tanggal_selesai,
+         gambar_event
+       FROM \`event\`
+       WHERE id_event = ?`,
+      [id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('getEventById error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
 export async function createEvent(req, res) {
   try {
     const { name, description, event_date, location, image_url } = req.body || {};

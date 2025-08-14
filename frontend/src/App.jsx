@@ -15,6 +15,8 @@ import ManageGallery from './pages/admin/ManageGallery.jsx';
 import FormGallery from './pages/admin/FormGallery.jsx';
 import ManageCategories from './pages/admin/ManageCategories.jsx';
 import FormCategory from './pages/admin/FormCategory.jsx';
+import ManageEvents from './pages/admin/ManageEvents.jsx';
+import FormEvent from './pages/admin/FormEvent.jsx';
 
 /**
  * ANCHOR: App
@@ -43,6 +45,9 @@ export default function App() {
         <Route path="/admin/categories" element={<ManageCategories />} />
         <Route path="/admin/categories/new" element={<FormCategory />} />
         <Route path="/admin/categories/:id/edit" element={<FormCategory />} />
+        <Route path="/admin/events" element={<ManageEvents />} />
+        <Route path="/admin/events/new" element={<FormEvent />} />
+        <Route path="/admin/events/:id/edit" element={<FormEvent />} />
       </Route>
     </Routes>
   );
