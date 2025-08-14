@@ -19,9 +19,47 @@ export default function HomePage() {
 
   return (
     <div className="space-y-12">
-      <section className="text-center space-y-3">
-        <h1 className="text-3xl font-bold">Selamat Datang di Pariwisata Bulukumba</h1>
-        <p className="opacity-80">Jelajahi keindahan alam, budaya, dan destinasi menarik di Bulukumba.</p>
+      {/* Hero Section with Background Image */}
+      <section 
+        className="relative min-h-screen flex items-center justify-center text-center rounded-3xl overflow-hidden mx-4 my-8"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        <div className="container mx-auto px-4 z-10 relative">
+          <div className="max-w-4xl mx-auto space-y-6 text-white">
+            <h1 className="text-5xl md:text-6xl font-bold leading-tight">
+              Selamat Datang di Pariwisata Bulukumba
+            </h1>
+            <p className="text-xl md:text-2xl opacity-90 leading-relaxed">
+              Jelajahi keindahan alam, budaya, dan destinasi menarik di Bulukumba
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+              <Link 
+                to="/attractions" 
+                className="btn btn-primary btn-lg text-white px-8 py-3 rounded-full hover:scale-105 transition-transform"
+              >
+                Jelajahi Destinasi
+              </Link>
+              <Link 
+                to="/events" 
+                className="btn btn-outline btn-lg text-white border-white hover:bg-white hover:text-black px-8 py-3 rounded-full hover:scale-105 transition-transform"
+              >
+                Lihat Event
+              </Link>
+            </div>
+          </div>
+        </div>
+        
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </div>
       </section>
 
       <section>
