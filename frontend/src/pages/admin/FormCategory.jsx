@@ -7,7 +7,6 @@ import { Form, Button, Card } from '../../components';
 const emptyForm = {
   nama_kategori: '',
   deskripsi: '',
-  gambar: '',
 };
 
 /**
@@ -32,7 +31,6 @@ export default function FormCategory() {
           setForm({
             nama_kategori: category.nama_kategori || '',
             deskripsi: category.deskripsi || '',
-            gambar: category.gambar || '',
           });
         } catch (error) {
           console.error('Error fetching category:', error);
@@ -57,7 +55,6 @@ export default function FormCategory() {
       const payload = {
         name: form.nama_kategori,
         description: form.deskripsi,
-        image: form.gambar,
       };
 
       if (isEditing) {
@@ -119,13 +116,7 @@ export default function FormCategory() {
               helperText="Deskripsi singkat tentang kategori ini"
             />
 
-            <Form.Input
-              label="URL Gambar"
-              placeholder="Masukkan URL gambar kategori (opsional)"
-              value={form.gambar}
-              onChange={(e) => setForm({ ...form, gambar: e.target.value })}
-              helperText="URL gambar yang akan ditampilkan untuk kategori ini"
-            />
+
           </Form.Section>
         </Form>
       </Card>

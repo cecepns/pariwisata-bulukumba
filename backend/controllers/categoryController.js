@@ -8,8 +8,7 @@ export async function getAllCategories(req, res) {
       `SELECT
          id_kategori,
          nama_kategori,
-         deskripsi,
-         gambar
+         deskripsi
        FROM kategori
        ORDER BY nama_kategori ASC`
     );
@@ -27,8 +26,7 @@ export async function getCategoryById(req, res) {
       `SELECT
          id_kategori,
          nama_kategori,
-         deskripsi,
-         gambar
+         deskripsi
        FROM kategori
        WHERE id_kategori = ?`,
       [id]
@@ -47,23 +45,22 @@ export async function getCategoryById(req, res) {
 
 export async function createCategory(req, res) {
   try {
-    const { name, description, image } = req.body;
+    const { name, description } = req.body;
     
     if (!name) {
       return res.status(400).json({ message: 'Nama kategori wajib diisi' });
     }
     
     const result = await query(
-      `INSERT INTO kategori (nama_kategori, deskripsi, gambar)
-       VALUES (?, ?, ?)`,
-      [name, description || null, image || null]
+      `INSERT INTO kategori (nama_kategori, deskripsi)
+       VALUES (?, ?)`,
+      [name, description || null]
     );
     
     res.status(201).json({
       id_kategori: result.insertId,
       nama_kategori: name,
       deskripsi: description,
-      gambar: image,
       message: 'Kategori berhasil ditambahkan'
     });
   } catch (err) {
@@ -75,7 +72,7 @@ export async function createCategory(req, res) {
 export async function updateCategory(req, res) {
   try {
     const { id } = req.params;
-    const { name, description, image } = req.body;
+    const { name, description } = req.body;
     
     if (!name) {
       return res.status(400).json({ message: 'Nama kategori wajib diisi' });
@@ -83,9 +80,9 @@ export async function updateCategory(req, res) {
     
     const result = await query(
       `UPDATE kategori 
-       SET nama_kategori = ?, deskripsi = ?, gambar = ?
+       SET nama_kategori = ?, deskripsi = ?
        WHERE id_kategori = ?`,
-      [name, description || null, image || null, id]
+      [name, description || null, id]
     );
     
     if (result.affectedRows === 0) {
@@ -96,7 +93,6 @@ export async function updateCategory(req, res) {
       id_kategori: id,
       nama_kategori: name,
       deskripsi: description,
-      gambar: image,
       message: 'Kategori berhasil diperbarui'
     });
   } catch (err) {
