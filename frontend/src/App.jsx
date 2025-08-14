@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage.jsx';
 import AttractionsPage from './pages/AttractionsPage.jsx';
 import AttractionDetailPage from './pages/AttractionDetailPage.jsx';
 import EventsPage from './pages/EventsPage.jsx';
+import EventDetailPage from './pages/EventDetailPage.jsx';
 import GalleryPage from './pages/GalleryPage.jsx';
 import AdminLoginPage from './pages/AdminLoginPage.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/attractions" element={<AttractionsPage />} />
         <Route path="/attractions/:id" element={<AttractionDetailPage />} />
         <Route path="/events" element={<EventsPage />} />
+        <Route path="/events/:id" element={<EventDetailPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
       </Route>

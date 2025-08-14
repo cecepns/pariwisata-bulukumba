@@ -3,6 +3,7 @@ import { useNavigate, Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../services/api.js';
 import { Form, Button, Card } from '../../components';
+import { getImageUrl } from '../../utils/imageUrl.js';
 
 const emptyForm = {
   nama_event: '',
@@ -24,6 +25,8 @@ export default function FormEvent() {
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [loadingEvent, setLoadingEvent] = useState(isEditing);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
 
   // Fetch event data if editing
   useEffect(() => {
@@ -40,6 +43,11 @@ export default function FormEvent() {
             tanggal_selesai: event.tanggal_selesai ? event.tanggal_selesai.split('T')[0] : '',
             gambar_event: event.gambar_event || '',
           });
+          
+          // Set preview URL for existing image
+          if (event.gambar_event) {
+            setPreviewUrl(getImageUrl(event.gambar_event));
+          }
         } catch (error) {
           console.error('Error fetching event:', error);
           toast.error('Gagal memuat data event');
@@ -51,6 +59,33 @@ export default function FormEvent() {
     }
   }, [id, isEditing]);
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Mohon pilih file gambar yang valid (JPG, PNG, GIF, WEBP)');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Ukuran file maksimal 5MB');
+        return;
+      }
+
+      setSelectedFile(file);
+      
+      // Create preview URL
+      const fileReader = new FileReader();
+      fileReader.onload = (e) => {
+        setPreviewUrl(e.target.result);
+      };
+      fileReader.readAsDataURL(file);
+    }
+  };
+
   /**
    * ANCHOR: handleSubmit
    * Posts a new event or updates existing one and navigates back to listing.
@@ -60,13 +95,29 @@ export default function FormEvent() {
     setSubmitting(true);
     
     try {
+      let imageUrl = form.gambar_event;
+
+      // If new file is selected, upload it first
+      if (selectedFile) {
+        const formDataUpload = new FormData();
+        formDataUpload.append('image', selectedFile);
+        
+        const uploadResponse = await api.post('/admin/upload-image', formDataUpload, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        imageUrl = uploadResponse.data.url;
+      }
+
       const payload = {
         name: form.nama_event,
         description: form.deskripsi_event,
         location: form.tempat,
         event_date: form.tanggal_mulai,
         end_date: form.tanggal_selesai,
-        image_url: form.gambar_event,
+        image_url: imageUrl,
       };
 
       if (isEditing) {
@@ -152,13 +203,43 @@ export default function FormEvent() {
               helperText="Tanggal selesai pelaksanaan event (opsional untuk event 1 hari)"
             />
 
-            <Form.Input
-              label="URL Gambar"
-              placeholder="https://example.com/image.jpg"
-              value={form.gambar_event}
-              onChange={(e) => setForm({ ...form, gambar_event: e.target.value })}
-              helperText="URL gambar untuk event (opsional)"
-            />
+            <div>
+              <label className="label">
+                <span className="label-text">Gambar Event</span>
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="file-input file-input-bordered w-full"
+                required={!isEditing}
+              />
+              <div className="label">
+                <span className="label-text-alt">
+                  Format: JPG, PNG, GIF, WEBP (Maksimal 5MB)
+                  {isEditing && ' • Kosongkan jika tidak ingin mengubah gambar'}
+                </span>
+              </div>
+              
+              {previewUrl && (
+                <div className="mt-3">
+                  <p className="text-sm text-base-content/60 mb-2">Preview:</p>
+                  <div className="relative w-full max-w-xs">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full h-48 object-cover rounded-lg border border-base-content/10"
+                    />
+                    {selectedFile && (
+                      <div className="mt-2 text-xs text-base-content/60">
+                        <p>File: {selectedFile.name}</p>
+                        <p>Ukuran: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </Form.Section>
         </Form>
       </Card>

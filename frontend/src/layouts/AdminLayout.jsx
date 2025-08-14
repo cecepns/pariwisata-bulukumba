@@ -41,7 +41,27 @@ export default function AdminLayout() {
           ))}
         </ul>
         <div className="p-4 border-t">
-          <button className="btn btn-error btn-sm w-full" onClick={handleLogout}>Keluar</button>
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="avatar w-10 h-10">
+              <img
+                src="https://placehold.co/200x200?text=A"
+                alt="Admin"
+                className="rounded-full object-cover"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-base-content truncate">Administrator</p>
+            </div>
+          </div>
+          <button 
+            className="btn btn-error btn-sm w-full gap-2" 
+            onClick={handleLogout}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Keluar
+          </button>
         </div>
       </aside>
 
@@ -51,7 +71,31 @@ export default function AdminLayout() {
             <span className="font-semibold">Dashboard Admin</span>
           </div>
           <div className="flex-none px-4 md:hidden">
-            <button className="btn btn-error btn-sm" onClick={handleLogout}>Keluar</button>
+            <div className="dropdown dropdown-end">
+              <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+                <img
+                  src="https://placehold.co/200x200?text=A"
+                  alt="Admin"
+                  className="w-5 rounded-full object-cover"
+                />
+              </div>
+              <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                <li className="menu-title">
+                  <span className="text-xs">Administrator</span>
+                </li>
+                <li>
+                  <button 
+                    className="text-error gap-2" 
+                    onClick={handleLogout}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Keluar
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
         </header>
 

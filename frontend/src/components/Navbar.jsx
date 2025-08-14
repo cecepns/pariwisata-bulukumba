@@ -2,12 +2,6 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-  function handleLogout() {
-    localStorage.removeItem('token');
-    navigate('/');
-  }
 
   const linkClass = ({ isActive }) => `px-3 py-2 rounded-md ${isActive ? 'font-semibold' : ''}`;
 
@@ -23,14 +17,6 @@ export default function Navbar() {
             <li><NavLink to="/attractions" className={linkClass}>Wisata</NavLink></li>
             <li><NavLink to="/events" className={linkClass}>Event</NavLink></li>
             <li><NavLink to="/gallery" className={linkClass}>Galeri</NavLink></li>
-            {token ? (
-              <>
-                <li><NavLink to="/admin" className={linkClass}>Admin</NavLink></li>
-                <li><button className="btn btn-sm" onClick={handleLogout}>Keluar</button></li>
-              </>
-            ) : (
-              <li><NavLink to="/admin/login" className={linkClass}>Login</NavLink></li>
-            )}
           </ul>
         </div>
       </div>

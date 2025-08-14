@@ -28,7 +28,7 @@ export default function AttractionCard({ attraction }) {
         <h2 className="card-title">{attraction.nama_wisata}</h2>
         <p className="text-sm opacity-80">{shortDesc}</p>
         <div className="card-actions justify-end">
-          <Link to={`/attractions/${attraction.id_wisata}`} className="btn btn-primary btn-sm">Detail</Link>
+          <Link to={`/attractions/${attraction.id_wisata}`} className='hover:underline'>Lihat lebih lanjut</Link>
         </div>
       </div>
     </div>
