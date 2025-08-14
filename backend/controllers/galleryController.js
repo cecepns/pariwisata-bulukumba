@@ -10,6 +10,7 @@ export async function getAllGalleries(req, res) {
          g.id_wisata,
          g.gambar,
          g.keterangan,
+         g.nama,
          w.nama_wisata
        FROM galeri g
        LEFT JOIN wisata w ON g.id_wisata = w.id_wisata
@@ -24,12 +25,12 @@ export async function getAllGalleries(req, res) {
 
 export async function createGallery(req, res) {
   try {
-    const { id_wisata, gambar, keterangan } = req.body || {};
+    const { id_wisata, gambar, keterangan, nama } = req.body || {};
     if (!id_wisata) return res.status(400).json({ message: 'id_wisata is required' });
     if (!gambar) return res.status(400).json({ message: 'gambar is required' });
     const result = await query(
-      `INSERT INTO galeri (id_wisata, gambar, keterangan) VALUES (?, ?, ?)`,
-      [id_wisata, gambar, keterangan || null]
+      `INSERT INTO galeri (id_wisata, gambar, keterangan, nama) VALUES (?, ?, ?, ?)`,
+      [id_wisata, gambar, keterangan || null, nama || null]
     );
     res.status(201).json({ id_galeri: result.insertId });
   } catch (err) {
@@ -41,7 +42,7 @@ export async function createGallery(req, res) {
 export async function updateGallery(req, res) {
   try {
     const { id } = req.params;
-    const { id_wisata, gambar, keterangan } = req.body;
+    const { id_wisata, gambar, keterangan, nama } = req.body;
     
     const updates = [];
     const params = [];
@@ -57,6 +58,10 @@ export async function updateGallery(req, res) {
     if (keterangan !== undefined) {
       updates.push('keterangan = ?');
       params.push(keterangan);
+    }
+    if (nama !== undefined) {
+      updates.push('nama = ?');
+      params.push(nama);
     }
     
     if (updates.length === 0) return res.status(400).json({ message: 'No fields to update' });
@@ -77,7 +82,8 @@ export async function getGalleryById(req, res) {
          g.id_galeri,
          g.id_wisata,
          g.gambar,
-         g.keterangan
+         g.keterangan,
+         g.nama
        FROM galeri g
        WHERE g.id_galeri = ?`,
       [id]

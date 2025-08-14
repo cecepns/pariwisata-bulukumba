@@ -24,6 +24,7 @@ import {
   deleteGallery,
 } from '../controllers/galleryController.js';
 import { getAllCategories } from '../controllers/categoryController.js';
+import { uploadImage, handleImageUpload } from '../controllers/uploadController.js';
 
 const router = Router();
 
@@ -48,6 +49,9 @@ router.delete('/events/:id', deleteEvent);
 
 // Categories
 router.get('/categories', getAllCategories);
+
+// Upload
+router.post('/upload-image', uploadImage, handleImageUpload);
 
 // Galleries
 router.get('/galleries', getAllGalleries);

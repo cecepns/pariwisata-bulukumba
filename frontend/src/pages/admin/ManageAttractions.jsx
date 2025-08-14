@@ -34,7 +34,7 @@ export default function ManageAttractions() {
   }
 
   function handleManageGallery(item) {
-    navigate(`/admin/galleries?wisata=${item.id_wisata}`);
+    navigate(`/admin/attractions/${item.id_wisata}/galleries`);
   }
 
   const columns = [

@@ -5,7 +5,12 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { pool, query } from './config.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import publicAttractions from './routes/attractions.js';
 import publicEvents from './routes/events.js';
@@ -18,6 +23,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Serve static files (uploaded images)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 

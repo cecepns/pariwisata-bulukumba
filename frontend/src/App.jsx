@@ -35,9 +35,9 @@ export default function App() {
         <Route path="/admin/attractions" element={<ManageAttractions />} />
         <Route path="/admin/attractions/new" element={<FormAttraction />} />
         <Route path="/admin/attractions/:id/edit" element={<FormAttraction />} />
-        <Route path="/admin/galleries" element={<ManageGallery />} />
-        <Route path="/admin/galleries/new" element={<FormGallery />} />
-        <Route path="/admin/galleries/:id/edit" element={<FormGallery />} />
+        <Route path="/admin/attractions/:wisataId/galleries" element={<ManageGallery />} />
+        <Route path="/admin/attractions/:wisataId/galleries/new" element={<FormGallery />} />
+        <Route path="/admin/attractions/:wisataId/galleries/:id/edit" element={<FormGallery />} />
       </Route>
     </Routes>
   );
