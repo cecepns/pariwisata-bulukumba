@@ -60,7 +60,7 @@ const DataTable = ({
 
   return (
     <div className={`overflow-x-auto rounded-box border border-base-content/5 bg-base-100 ${className}`} {...props}>
-      <table className="table">
+      <table className="table min-w-[800px]">
         <thead>
           <tr>
             {columns.map((column) => (
