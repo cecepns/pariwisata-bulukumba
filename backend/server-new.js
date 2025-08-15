@@ -698,6 +698,18 @@ async function handleImageUpload(req, res) {
 
 router.post('/admin/login', login);
 
+router.get('/attractions', getAllAttractions);
+router.get('/attractions/:id', getAttractionById);
+
+router.get('/events', getAllEvents);
+router.get('/events/:id', getEventById);
+
+router.get('/galleries', getAllGalleries);
+router.get('/galleries/:id', getGalleryById);
+
+router.get('/categories', getAllCategories);
+router.get('/categories/:id', getCategoryById);
+
 // Protected content management
 router.use(requireAuth);
 
@@ -731,18 +743,5 @@ router.get('/admin/galleries/:id', getGalleryById);
 router.post('/admin/galleries', createGallery);
 router.put('/admin/galleries/:id', updateGallery);
 router.delete('/admin/galleries/:id', deleteGallery);
-
-
-router.get('/attractions', getAllAttractions);
-router.get('/attractions/:id', getAttractionById);
-
-router.get('/events', getAllEvents);
-router.get('/events/:id', getEventById);
-
-router.get('/galleries', getAllGalleries);
-router.get('/galleries/:id', getGalleryById);
-
-router.get('/categories', getAllCategories);
-router.get('/categories/:id', getCategoryById);
 
 module.exports = router;
