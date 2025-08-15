@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api.js';
 import { getImageUrl } from '../utils/imageUrl.js';
+import ReviewForm from '../components/ReviewForm.jsx';
+import ReviewList from '../components/ReviewList.jsx';
+import RatingStars from '../components/RatingStars.jsx';
 
 export default function AttractionDetailPage() {
   const { id } = useParams();
@@ -11,6 +14,7 @@ export default function AttractionDetailPage() {
   const [gallery, setGallery] = useState([]);
   const [galleryLoading, setGalleryLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [refreshReviews, setRefreshReviews] = useState(0);
 
   useEffect(() => {
     // Fetch attraction data
@@ -124,9 +128,23 @@ export default function AttractionDetailPage() {
           {/* Attraction Title */}
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">{data.nama_wisata}</h1>
-            {data.nama_kategori && (
-              <div className="badge badge-outline badge-lg mb-4">{data.nama_kategori}</div>
-            )}
+            <div className="flex items-center space-x-4 mb-4">
+              {data.nama_kategori && (
+                <div className="badge badge-outline badge-lg">{data.nama_kategori}</div>
+              )}
+              {(data.average_rating > 0) && (
+                <div className="flex items-center space-x-2">
+                  <RatingStars
+                    rating={data.average_rating}
+                    size="md"
+                    showScore={true}
+                  />
+                  <span className="text-sm text-gray-600">
+                    ({data.total_reviews} ulasan)
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Attraction Description */}
@@ -238,7 +256,7 @@ export default function AttractionDetailPage() {
           <div className="text-center py-12">
             <div className="max-w-md mx-auto">
               <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada Galeri</h3>
               <p className="text-gray-500">Saat ini belum ada foto galeri untuk destinasi ini.</p>
@@ -277,6 +295,23 @@ export default function AttractionDetailPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Reviews Section */}
+      <div className="space-y-6 mt-8">
+        <h2 className="text-2xl font-bold text-gray-900">Ulasan Pengunjung</h2>
+        
+        {/* Review Form */}
+        <ReviewForm 
+          wisataId={id} 
+          onReviewSubmitted={() => setRefreshReviews(prev => prev + 1)}
+        />
+        
+        {/* Review List */}
+        <ReviewList 
+          key={refreshReviews}
+          wisataId={id} 
+        />
       </div>
 
       {/* Image Modal */}

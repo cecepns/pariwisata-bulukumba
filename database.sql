@@ -10,13 +10,6 @@ CREATE TABLE IF NOT EXISTS admin (
     password VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabel User (untuk kebutuhan masa depan)
-CREATE TABLE IF NOT EXISTS `user` (
-    id_user INT AUTO_INCREMENT PRIMARY KEY,
-    nama_user VARCHAR(150) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Tabel Kategori (master kategori wisata)
 CREATE TABLE IF NOT EXISTS kategori (
     id_kategori INT AUTO_INCREMENT PRIMARY KEY,
@@ -27,6 +20,9 @@ CREATE TABLE IF NOT EXISTS kategori (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabel Jelajah Wisata (detail destinasi)
+-- Menyimpan informasi lengkap objek wisata termasuk rating dan jumlah review
+-- average_rating: rata-rata rating dari review yang approved (0.00 - 5.00)
+-- total_reviews: jumlah total review yang approved
 CREATE TABLE IF NOT EXISTS wisata (
     id_wisata INT AUTO_INCREMENT PRIMARY KEY,
     id_kategori INT NOT NULL,
@@ -37,6 +33,8 @@ CREATE TABLE IF NOT EXISTS wisata (
     fasilitas TEXT,
     peta_wisata TEXT,
     keterangan TEXT,
+    average_rating DECIMAL(3,2) DEFAULT 0.00,
+    total_reviews INT DEFAULT 0,
     KEY idx_wisata_id_kategori (id_kategori),
     CONSTRAINT fk_wisata_kategori FOREIGN KEY (id_kategori)
         REFERENCES kategori(id_kategori)
@@ -69,6 +67,30 @@ CREATE TABLE IF NOT EXISTS galeri (
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabel Review (ulasan pengunjung)
+-- Menyimpan ulasan dan rating dari pengunjung untuk setiap objek wisata
+-- Sistem moderasi: pending (menunggu), approved (disetujui), rejected (ditolak)
+-- Rating: 1.0 - 5.0 dengan increment 0.5
+-- Auto-approval: rating 3-5 tanpa kata spam
+-- Manual review: rating 1-2 atau mengandung kata spam
+CREATE TABLE IF NOT EXISTS review (
+    id_review INT AUTO_INCREMENT PRIMARY KEY,
+    id_wisata INT NOT NULL,
+    nama_reviewer VARCHAR(150) NOT NULL,
+    email_reviewer VARCHAR(255),
+    rating DECIMAL(2,1) NOT NULL,
+    komentar TEXT,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_review_id_wisata (id_wisata),
+    KEY idx_review_status (status),
+    KEY idx_review_created_at (created_at),
+    CONSTRAINT fk_review_wisata FOREIGN KEY (id_wisata)
+        REFERENCES wisata(id_wisata)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- === DATA AWAL ===
 
 -- Akun admin default
@@ -78,10 +100,5 @@ INSERT IGNORE INTO admin (username, password) VALUES (
   '$2b$10$abcdefghijklmnopqrstuv'
 );
 
--- Beberapa kategori awal
-INSERT IGNORE INTO kategori (nama_kategori) VALUES
-('Wisata Alam'),
-('Wisata Budaya dan Sejarah'),
-('Wisata Buatan');
 
 

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { getImageUrl } from '../utils/imageUrl.js';
+import RatingStars from './RatingStars.jsx';
 
 export default function AttractionCard({ attraction }) {
   const description = attraction.deskripsi || '';
@@ -34,6 +35,18 @@ export default function AttractionCard({ attraction }) {
             )}
             {attraction.harga_tiket && (
               <p>💰 {attraction.harga_tiket}</p>
+            )}
+            {(attraction.average_rating > 0) && (
+              <div className="flex items-center space-x-2 mt-2">
+                <RatingStars
+                  rating={attraction.average_rating}
+                  size="sm"
+                  showScore={true}
+                />
+                <span className="text-xs text-gray-600">
+                  ({attraction.total_reviews})
+                </span>
+              </div>
             )}
           </div>
           <p className="text-sm opacity-80">{shortDesc}</p>
