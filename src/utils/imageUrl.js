@@ -13,11 +13,13 @@ export function getImageUrl(imagePath) {
   
   if (apiBaseUrl) {
     // Remove /api from baseUrl if present
-    serverBaseUrl = apiBaseUrl.replace('/api', '');
+    serverBaseUrl = apiBaseUrl;
   } else {
     // Default to localhost:5000
     serverBaseUrl = 'http://localhost:5000';
   }
+
+  console.log('serverBaseUrl', serverBaseUrl);
   
   // If imagePath starts with /, use it directly
   if (imagePath.startsWith('/')) {
