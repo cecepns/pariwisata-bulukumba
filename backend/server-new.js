@@ -640,7 +640,7 @@ async function deleteCategory(req, res) {
 }
 
 // Upload configuration and functions
-const uploadsDir = path.join(__dirname, '../uploads-bukukumba-wisata');
+const uploadsDir = path.join(__dirname, './uploads-bulukumba-wisata');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
