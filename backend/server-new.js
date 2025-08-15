@@ -710,7 +710,7 @@ router.get('/galleries/:id', getGalleryById);
 router.get('/categories', getAllCategories);
 router.get('/categories/:id', getCategoryById);
 
-router.get('/uploads', express.static(path.join(__dirname, 'uploads-bulukumba-wisata')));
+router.use('/uploads', express.static(path.join(__dirname, 'uploads-bulukumba-wisata')));
 
 
 // Protected content management
