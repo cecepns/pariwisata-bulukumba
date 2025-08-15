@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
           <input className="input input-bordered" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
         {error ? <p className="text-error text-sm">{error}</p> : null}
-        <button className={`btn btn-primary w-full ${loading ? 'loading' : ''}`} disabled={loading}>
+        <button className={`btn btn-primary w-full`} disabled={loading}>
           {loading ? 'Memproses…' : 'Masuk' }
         </button>
       </form>
