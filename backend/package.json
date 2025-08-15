@@ -7,8 +7,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "build": "webpack --config webpack.config.js",
-    "start:bundle": "node dist/server.bundle.js",
+    "build": "webpack --config webpack.config.cjs",
+    "start:bundle": "node dist/server.js",
     "seed:admin": "node scripts/seedAdmin.js"
   },
   "dependencies": {
