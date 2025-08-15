@@ -49,8 +49,8 @@ export default function ManageAttractions() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-xl sm:text-2xl font-semibold">Kelola Objek Wisata</h1>
-        <Link to="/admin/attractions/new">
-          <Button variant="soft" className="w-full sm:w-auto">Tambah</Button>
+        <Link to="/admin/attractions/new" className="w-full sm:w-auto">
+          <Button variant="soft" className='w-full'>Tambah</Button>
         </Link>
       </div>
 

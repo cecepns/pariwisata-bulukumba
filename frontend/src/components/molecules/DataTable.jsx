@@ -92,7 +92,7 @@ const DataTable = ({
                   </td>
                 ))}
                 {(onEdit || onDelete || onView || actions.length > 0) && (
-                  <td className="space-x-2 text-center">
+                  <td className="text-center flex flex-wrap gap-2">
                     {onView && (
                       <Button
                         size="xs"

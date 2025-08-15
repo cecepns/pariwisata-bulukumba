@@ -123,16 +123,16 @@ export default function FormAttraction() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-semibold">
           {isEditing ? 'Edit Objek Wisata' : 'Tambah Objek Wisata'}
         </h1>
-        <Link to="/admin/attractions">
-          <Button variant="ghost">Kembali</Button>
+        <Link to="/admin/attractions" className="w-full sm:w-auto">
+          <Button variant="ghost" className="w-full">Kembali</Button>
         </Link>
       </div>
 
-      <Card>
+      <Card className='p-4 sm:p-6'>
         <Form onSubmit={handleSubmit} loading={submitting} submitText={isEditing ? "Update" : "Simpan"}>
           <Form.Section title="Informasi Dasar">
             <Form.Input
