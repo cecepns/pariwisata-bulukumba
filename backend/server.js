@@ -25,7 +25,7 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // Serve static files (uploaded images)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads-bukukumba-wisata')));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
