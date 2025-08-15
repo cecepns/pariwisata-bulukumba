@@ -4,9 +4,10 @@
 Server files telah di-bundle menjadi satu file menggunakan Webpack untuk memudahkan deployment dan distribusi.
 
 ## File Bundle
-- **Location**: `dist/server.bundle.js`
-- **Size**: ~814KB (minified)
+- **Location**: `dist/server.js`
+- **Size**: ~1.89KB (minified)
 - **Dependencies**: Semua dependencies tetap di `node_modules/`
+- **Format**: CommonJS (menggunakan `require` statements)
 
 ## Scripts Available
 
@@ -42,7 +43,7 @@ npm run start:bundle # Run bundled server
 ## Bundle Configuration
 
 - **Entry point**: `server.js`
-- **Output**: `dist/server.bundle.js`
+- **Output**: `dist/server.js`
 - **Mode**: Production (minified)
 - **Target**: Node.js
 - **Externals**: Dependencies tetap external untuk mengurangi ukuran bundle
@@ -50,7 +51,7 @@ npm run start:bundle # Run bundled server
 ## Deployment
 
 Untuk deployment, Anda hanya perlu:
-1. File `dist/server.bundle.js`
+1. File `dist/server.js`
 2. Folder `node_modules/`
 3. File `.env` (environment variables)
 4. Folder `uploads/` (jika ada file upload)
@@ -64,7 +65,7 @@ Untuk deployment, Anda hanya perlu:
 
 ## Notes
 
-- Bundle menggunakan ES modules
+- Bundle menggunakan CommonJS dengan `require` statements
 - Dependencies tetap external untuk kompatibilitas
 - Upload folder tetap perlu di-copy secara terpisah
 - Environment variables tetap perlu dikonfigurasi

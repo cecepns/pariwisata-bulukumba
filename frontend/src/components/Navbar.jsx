@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import TranslateWidget from './TranslateWidget';
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -23,13 +24,14 @@ export default function Navbar() {
         </div>
         
         {/* Desktop Menu */}
-        <div className="hidden md:flex flex-none">
+        <div className="hidden md:flex flex-none items-center space-x-4">
           <ul className="menu menu-horizontal px-1 items-center">
             <li><NavLink to="/" className={linkClass}>Beranda</NavLink></li>
             <li><NavLink to="/attractions" className={linkClass}>Wisata</NavLink></li>
             <li><NavLink to="/events" className={linkClass}>Event</NavLink></li>
             <li><NavLink to="/gallery" className={linkClass}>Galeri</NavLink></li>
           </ul>
+          <TranslateWidget />
         </div>
 
         {/* Mobile Menu Button */}
@@ -106,6 +108,9 @@ export default function Navbar() {
                 Galeri
               </NavLink>
             </li>
+              <li className="px-3 py-2">
+                <TranslateWidget />
+              </li>
           </ul>
         </div>
       )}
