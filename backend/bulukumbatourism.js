@@ -5,29 +5,15 @@ const jwt = require('jsonwebtoken');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
-const cors = require('cors');
-const morgan = require('morgan');
-require('dotenv').config();
 
-// CORS configuration - allow all domains
-router.use(cors({
-  origin: '*', // Allow all origins
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow all methods
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Allow all headers
-  credentials: false // Set to false when using origin: '*'
-}));
-
-// Database configuration
-export const pool = mysql.createPool({
-    host: "localhost",
-    user: "isad8273_bulukumba_tourism",
-    password: "isad8273_bulukumba_tourism",
-    database: "isad8273_bulukumba_tourism",
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
+const pool = mysql.createPool({
+  host: "localhost",
+  user: "isad8273_bulukumba_tourism",
+  password: "isad8273_bulukumba_tourism",
+  database: "isad8273_bulukumba_tourism",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
 async function query(sql, params = []) {
@@ -35,42 +21,6 @@ async function query(sql, params = []) {
   return rows;
 }
 
-// Upload configuration
-const uploadsDir = path.join(__dirname, './uploads-bulukumbatourism');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WEBP files are allowed.'), false);
-  }
-};
-
-const upload = multer({ 
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  }
-});
-
-const uploadImage = upload.single('image');
-
-// Authentication middleware
 function requireAuth(req, res, next) {
   const authHeader = req.headers['authorization'] || '';
   const token = authHeader.startsWith('Bearer ')
@@ -91,6 +41,7 @@ function requireAuth(req, res, next) {
 
 // ===== REVIEW BUSINESS LOGIC =====
 
+// Validate review input
 function validateReviewInput(reviewData) {
   const errors = [];
   
@@ -127,6 +78,7 @@ function validateReviewInput(reviewData) {
   return errors;
 }
 
+// Determine review status based on rating and comment
 function determineReviewStatus(rating, komentar) {
   // Kata kunci spam yang akan trigger manual review
   const spamKeywords = [
@@ -148,6 +100,7 @@ function determineReviewStatus(rating, komentar) {
   return 'pending';
 }
 
+// Update wisata rating statistics
 async function updateWisataRating(id_wisata) {
   try {
     const stats = await query(`
@@ -174,9 +127,8 @@ async function updateWisataRating(id_wisata) {
   }
 }
 
-// ===== CONTROLLERS =====
+// ===== REVIEW CONTROLLERS =====
 
-// Review Controllers
 async function createReview(req, res) {
   try {
     const { id_wisata, nama_reviewer, email_reviewer, rating, komentar } = req.body;
@@ -399,7 +351,6 @@ async function getPendingReviews(req, res) {
   }
 }
 
-// Attraction Controllers
 async function getAllAttractions(req, res) {
   try {
     const rows = await query(
@@ -570,7 +521,6 @@ async function deleteAttraction(req, res) {
   }
 }
 
-// Event Controllers
 async function getAllEvents(req, res) {
   try {
     const rows = await query(
@@ -673,7 +623,12 @@ async function deleteEvent(req, res) {
   }
 }
 
-// Gallery Controllers
+const fs = require('fs');
+const path = require('path');
+
+// In CommonJS, __filename and __dirname are already available globally
+// No need to use import.meta.url or fileURLToPath
+
 async function getAllGalleries(req, res) {
   try {
     const rows = await query(
@@ -691,32 +646,6 @@ async function getAllGalleries(req, res) {
     res.json(rows);
   } catch (err) {
     console.error('getAllGalleries error', err);
-    res.status(500).json({ message: 'Server error' });
-  }
-}
-
-async function getGalleryById(req, res) {
-  try {
-    const { id } = req.params;
-    const rows = await query(
-      `SELECT 
-         g.id_galeri,
-         g.id_wisata,
-         g.gambar,
-         g.keterangan,
-         g.nama
-       FROM galeri g
-       WHERE g.id_galeri = ?`,
-      [id]
-    );
-    
-    if (rows.length === 0) {
-      return res.status(404).json({ message: 'Gallery not found' });
-    }
-    
-    res.json(rows[0]);
-  } catch (err) {
-    console.error('getGalleryById error', err);
     res.status(500).json({ message: 'Server error' });
   }
 }
@@ -797,6 +726,32 @@ async function updateGallery(req, res) {
   }
 }
 
+async function getGalleryById(req, res) {
+  try {
+    const { id } = req.params;
+    const rows = await query(
+      `SELECT 
+         g.id_galeri,
+         g.id_wisata,
+         g.gambar,
+         g.keterangan,
+         g.nama
+       FROM galeri g
+       WHERE g.id_galeri = ?`,
+      [id]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Gallery not found' });
+    }
+    
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('getGalleryById error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
 async function deleteGallery(req, res) {
   try {
     const { id } = req.params;
@@ -836,7 +791,39 @@ async function deleteGallery(req, res) {
   }
 }
 
-// Category Controllers
+// Admin login function
+async function login(req, res) {
+  try {
+    const { password } = req.body || {};
+    const username = (req.body && (req.body.username || req.body.email)) || '';
+
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+
+    const admins = await query(
+      'SELECT id_admin AS id, username, password FROM admin WHERE username = ? LIMIT 1',
+      [username]
+    );
+    if (!admins || admins.length === 0) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    const admin = admins[0];
+    const isValid = await bcrypt.compare(password, admin.password);
+    if (!isValid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const secret = process.env.JWT_SECRET || 'dev_secret_change_me';
+    const token = jwt.sign({ id: admin.id, username: admin.username }, secret, { expiresIn: '7d' });
+    return res.json({ token });
+  } catch (err) {
+    console.error('Login error', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
+
+// Category functions
 async function getAllCategories(req, res) {
   try {
     const rows = await query(
@@ -968,39 +955,41 @@ async function deleteCategory(req, res) {
   }
 }
 
-// Admin Controllers
-async function login(req, res) {
-  try {
-    const { password } = req.body || {};
-    const username = (req.body && (req.body.username || req.body.email)) || '';
-
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Username and password are required' });
-    }
-
-    const admins = await query(
-      'SELECT id_admin AS id, username, password FROM admin WHERE username = ? LIMIT 1',
-      [username]
-    );
-    if (!admins || admins.length === 0) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-    const admin = admins[0];
-    const isValid = await bcrypt.compare(password, admin.password);
-    if (!isValid) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const secret = process.env.JWT_SECRET || 'dev_secret_change_me';
-    const token = jwt.sign({ id: admin.id, username: admin.username }, secret, { expiresIn: '7d' });
-    return res.json({ token });
-  } catch (err) {
-    console.error('Login error', err);
-    return res.status(500).json({ message: 'Server error' });
-  }
+// Upload configuration and functions
+const uploadsDir = path.join(__dirname, './uploads-bulukumba-wisata');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Upload Controller
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WEBP files are allowed.'), false);
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  }
+});
+
+const uploadImage = upload.single('image');
+
 async function handleImageUpload(req, res) {
   try {
     if (!req.file) {
@@ -1022,21 +1011,16 @@ async function handleImageUpload(req, res) {
   }
 }
 
+
 // Health check endpoint
-async function healthCheck(req, res) {
+router.get('/health', (_req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });
-}
+});
 
-// ===== ROUTES =====
-
-// Health check
-router.get('/health', healthCheck);
-
-// Public API routes
 router.post('/admin/login', login);
 
 router.get('/attractions', getAllAttractions);
@@ -1055,8 +1039,8 @@ router.get('/categories/:id', getCategoryById);
 router.post('/reviews', createReview);
 router.get('/reviews/wisata/:id_wisata', getReviewsByWisata);
 
-// Static files
-router.use('/uploads', express.static(path.join(__dirname, 'uploads-bulukumbatourism')));
+router.use('/uploads', express.static(path.join(__dirname, 'uploads-bulukumba-wisata')));
+
 
 // Protected content management
 router.use(requireAuth);
@@ -1092,7 +1076,7 @@ router.post('/admin/galleries', createGallery);
 router.put('/admin/galleries/:id', updateGallery);
 router.delete('/admin/galleries/:id', deleteGallery);
 
-// Reviews
+// Admin reviews
 router.get('/admin/reviews', getAllReviews);
 router.get('/admin/reviews/pending', getPendingReviews);
 router.put('/admin/reviews/:id_review/status', updateReviewStatus);
