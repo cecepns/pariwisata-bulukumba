@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import RatingStars from '../../components/RatingStars';
+import toast from 'react-hot-toast';
 
 const ManageReviews = () => {
   const [reviews, setReviews] = useState([]);
@@ -44,11 +45,11 @@ const ManageReviews = () => {
       // Refresh the list
       await loadReviews(currentPage, statusFilter);
       
-      // Show success message
-      alert(`Review berhasil ${newStatus === 'approved' ? 'disetujui' : 'ditolak'}`);
+      // Show success message using toast
+      toast.success(`Review berhasil ${newStatus === 'approved' ? 'disetujui' : 'ditolak'}`);
     } catch (error) {
       console.error('Error updating review status:', error);
-      alert('Gagal mengupdate status review');
+      toast.error('Gagal mengupdate status review');
     } finally {
       setUpdatingStatus(null);
     }
