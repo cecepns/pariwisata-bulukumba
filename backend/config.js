@@ -16,8 +16,8 @@ const {
 export const pool = mysql.createPool({
   host: "localhost",
   user: "isad8273_bulukumba_tourism",
-  password: "isad8273_bulukumba_tourism,
-  database: "isad8273_bulukumba_tourism,
+  password: "isad8273_bulukumba_tourism",
+  database: "isad8273_bulukumba_tourism",
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
