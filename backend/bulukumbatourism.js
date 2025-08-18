@@ -39,6 +39,318 @@ function requireAuth(req, res, next) {
   }
 }
 
+// ===== REVIEW BUSINESS LOGIC =====
+
+// Validate review input
+function validateReviewInput(reviewData) {
+  const errors = [];
+  
+  // Rating validation: 1.0 - 5.0 dengan increment 0.5
+  if (!reviewData.rating || reviewData.rating < 1.0 || reviewData.rating > 5.0) {
+    errors.push('Rating harus antara 1.0 - 5.0');
+  }
+  
+  // Check if rating is in 0.5 increments
+  if (reviewData.rating % 0.5 !== 0) {
+    errors.push('Rating harus dalam kelipatan 0.5');
+  }
+  
+  // Nama reviewer validation: wajib, maksimal 150 karakter
+  if (!reviewData.nama_reviewer || reviewData.nama_reviewer.trim() === '') {
+    errors.push('Nama reviewer wajib diisi');
+  } else if (reviewData.nama_reviewer.length > 150) {
+    errors.push('Nama reviewer maksimal 150 karakter');
+  }
+  
+  // Email validation: opsional, jika diisi harus valid
+  if (reviewData.email_reviewer && reviewData.email_reviewer.trim() !== '') {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(reviewData.email_reviewer)) {
+      errors.push('Format email tidak valid');
+    }
+  }
+  
+  // Komentar validation: maksimal 1000 karakter
+  if (reviewData.komentar && reviewData.komentar.length > 1000) {
+    errors.push('Komentar maksimal 1000 karakter');
+  }
+  
+  return errors;
+}
+
+// Determine review status based on rating and comment
+function determineReviewStatus(rating, komentar) {
+  // Kata kunci spam yang akan trigger manual review
+  const spamKeywords = [
+    'spam', 'scam', 'fake', 'terrible', 'awful', 'horrible',
+    'worst', 'bad', 'sucks', 'garbage', 'waste'
+  ];
+  
+  // Cek apakah komentar mengandung kata kunci spam
+  const hasSpamKeywords = spamKeywords.some(keyword => 
+    komentar && komentar.toLowerCase().includes(keyword)
+  );
+  
+  // Auto-approval: rating 3-5 dan tidak ada kata spam
+  if (rating >= 3.0 && !hasSpamKeywords) {
+    return 'approved';
+  }
+  
+  // Manual review: rating 1-2 atau ada kata spam
+  return 'pending';
+}
+
+// Update wisata rating statistics
+async function updateWisataRating(id_wisata) {
+  try {
+    const stats = await query(`
+      SELECT 
+        COUNT(*) as total_reviews,
+        AVG(rating) as average_rating
+      FROM review 
+      WHERE id_wisata = ? AND status = 'approved'
+    `, [id_wisata]);
+    
+    const totalReviews = stats[0].total_reviews || 0;
+    const averageRating = parseFloat(stats[0].average_rating || 0).toFixed(2);
+    
+    await query(`
+      UPDATE wisata 
+      SET average_rating = ?, total_reviews = ?
+      WHERE id_wisata = ?
+    `, [averageRating, totalReviews, id_wisata]);
+    
+    return { total_reviews: totalReviews, average_rating: averageRating };
+  } catch (error) {
+    console.error('Error updating wisata rating:', error);
+    throw error;
+  }
+}
+
+// ===== REVIEW CONTROLLERS =====
+
+async function createReview(req, res) {
+  try {
+    const { id_wisata, nama_reviewer, email_reviewer, rating, komentar } = req.body;
+    
+    // Validasi input
+    const validationErrors = validateReviewInput(req.body);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ 
+        message: 'Validasi gagal', 
+        errors: validationErrors 
+      });
+    }
+    
+    // Cek apakah wisata exists
+    const wisata = await query('SELECT id_wisata FROM wisata WHERE id_wisata = ?', [id_wisata]);
+    if (!wisata || wisata.length === 0) {
+      return res.status(404).json({ message: 'Wisata tidak ditemukan' });
+    }
+    
+    // Determine review status
+    const status = determineReviewStatus(rating, komentar);
+    
+    // Save review ke database
+    const result = await query(`
+      INSERT INTO review (id_wisata, nama_reviewer, email_reviewer, rating, komentar, status)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [
+      id_wisata,
+      nama_reviewer.trim(),
+      email_reviewer ? email_reviewer.trim() : null,
+      rating,
+      komentar ? komentar.trim() : null,
+      status
+    ]);
+    
+    // Update wisata rating jika review approved
+    if (status === 'approved') {
+      await updateWisataRating(id_wisata);
+    }
+    
+    res.status(201).json({
+      message: status === 'approved' ? 'Review berhasil ditambahkan' : 'Review sedang dalam moderasi',
+      data: {
+        id_review: result.insertId,
+        status: status
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error creating review:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+}
+
+async function getReviewsByWisata(req, res) {
+  try {
+    const { id_wisata } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    
+    // Get reviews
+    const reviews = await query(`
+      SELECT id_review, nama_reviewer, rating, komentar, created_at
+      FROM review 
+      WHERE id_wisata = ? AND status = 'approved'
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `, [id_wisata, limit, offset]);
+    
+    // Get total count
+    const totalResult = await query(`
+      SELECT COUNT(*) as total
+      FROM review 
+      WHERE id_wisata = ? AND status = 'approved'
+    `, [id_wisata]);
+    
+    const total = totalResult[0].total;
+    
+    res.json({
+      data: reviews,
+      pagination: {
+        page: page,
+        limit: limit,
+        total: total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error getting reviews:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+}
+
+async function getAllReviews(req, res) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
+    const offset = (page - 1) * limit;
+    
+    let whereClause = '1=1';
+    let params = [];
+    
+    if (status) {
+      whereClause += ' AND r.status = ?';
+      params.push(status);
+    }
+    
+    // Get reviews with wisata info
+    const reviews = await query(`
+      SELECT r.id_review, r.nama_reviewer, r.email_reviewer, r.rating, r.komentar, 
+             r.status, r.created_at, w.nama_wisata
+      FROM review r
+      JOIN wisata w ON r.id_wisata = w.id_wisata
+      WHERE ${whereClause}
+      ORDER BY r.created_at DESC
+      LIMIT ? OFFSET ?
+    `, [...params, limit, offset]);
+    
+    // Get total count
+    const totalResult = await query(`
+      SELECT COUNT(*) as total
+      FROM review r
+      WHERE ${whereClause}
+    `, params);
+    
+    const total = totalResult[0].total;
+    
+    res.json({
+      data: reviews,
+      pagination: {
+        page: page,
+        limit: limit,
+        total: total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error getting all reviews:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+}
+
+async function updateReviewStatus(req, res) {
+  try {
+    const { id_review } = req.params;
+    const { status } = req.body;
+    
+    // Validasi status
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Status tidak valid' });
+    }
+    
+    // Get review info
+    const review = await query('SELECT id_wisata FROM review WHERE id_review = ?', [id_review]);
+    if (!review || review.length === 0) {
+      return res.status(404).json({ message: 'Review tidak ditemukan' });
+    }
+    
+    // Update status
+    await query('UPDATE review SET status = ? WHERE id_review = ?', [status, id_review]);
+    
+    // Update wisata rating jika status berubah ke approved
+    if (status === 'approved') {
+      await updateWisataRating(review[0].id_wisata);
+    }
+    
+    res.json({
+      message: `Review berhasil ${status === 'approved' ? 'disetujui' : 'ditolak'}`
+    });
+    
+  } catch (error) {
+    console.error('Error updating review status:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+}
+
+async function getPendingReviews(req, res) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    
+    // Get pending reviews
+    const reviews = await query(`
+      SELECT r.id_review, r.nama_reviewer, r.email_reviewer, r.rating, r.komentar, 
+             r.created_at, w.nama_wisata
+      FROM review r
+      JOIN wisata w ON r.id_wisata = w.id_wisata
+      WHERE r.status = 'pending'
+      ORDER BY r.created_at ASC
+      LIMIT ? OFFSET ?
+    `, [limit, offset]);
+    
+    // Get total count
+    const totalResult = await query(`
+      SELECT COUNT(*) as total
+      FROM review 
+      WHERE status = 'pending'
+    `);
+    
+    const total = totalResult[0].total;
+    
+    res.json({
+      data: reviews,
+      pagination: {
+        page: page,
+        limit: limit,
+        total: total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error getting pending reviews:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+}
+
 async function getAllAttractions(req, res) {
   try {
     const rows = await query(
@@ -53,6 +365,8 @@ async function getAllAttractions(req, res) {
          w.fasilitas,
          w.peta_wisata,
          w.keterangan,
+         w.average_rating,
+         w.total_reviews,
          (SELECT gg.gambar FROM galeri gg WHERE gg.id_wisata = w.id_wisata ORDER BY gg.id_galeri ASC LIMIT 1) AS cover_image_url
        FROM wisata w
        LEFT JOIN kategori k ON k.id_kategori = w.id_kategori
@@ -80,6 +394,8 @@ async function getAttractionById(req, res) {
          w.fasilitas,
          w.peta_wisata,
          w.keterangan,
+         w.average_rating,
+         w.total_reviews,
          (SELECT gg.gambar FROM galeri gg WHERE gg.id_wisata = w.id_wisata ORDER BY gg.id_galeri ASC LIMIT 1) AS cover_image_url
        FROM wisata w
        LEFT JOIN kategori k ON k.id_kategori = w.id_kategori
@@ -640,7 +956,7 @@ async function deleteCategory(req, res) {
 }
 
 // Upload configuration and functions
-const uploadsDir = path.join(__dirname, './uploads-bukukumba-wisata');
+const uploadsDir = path.join(__dirname, './uploads-bulukumba-wisata');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -696,6 +1012,15 @@ async function handleImageUpload(req, res) {
 }
 
 
+// Health check endpoint
+router.get('/health', (_req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 router.post('/admin/login', login);
 
 router.get('/attractions', getAllAttractions);
@@ -704,14 +1029,18 @@ router.get('/attractions/:id', getAttractionById);
 router.get('/events', getAllEvents);
 router.get('/events/:id', getEventById);
 
-router.get('/galleries', getAllGalleries);
-router.get('/galleries/:id', getGalleryById);
+router.get('/gallery', getAllGalleries);
+router.get('/gallery/:id', getGalleryById);
 
 router.get('/categories', getAllCategories);
 router.get('/categories/:id', getCategoryById);
 
-// Serve uploaded files (public access, no auth required)
-router.use('/uploads', express.static(path.join(__dirname, 'uploads-bukukumba-wisata')));
+// Review routes (public)
+router.post('/reviews', createReview);
+router.get('/reviews/wisata/:id_wisata', getReviewsByWisata);
+
+router.use('/uploads', express.static(path.join(__dirname, 'uploads-bulukumba-wisata')));
+
 
 // Protected content management
 router.use(requireAuth);
@@ -746,5 +1075,10 @@ router.get('/admin/galleries/:id', getGalleryById);
 router.post('/admin/galleries', createGallery);
 router.put('/admin/galleries/:id', updateGallery);
 router.delete('/admin/galleries/:id', deleteGallery);
+
+// Admin reviews
+router.get('/admin/reviews', getAllReviews);
+router.get('/admin/reviews/pending', getPendingReviews);
+router.put('/admin/reviews/:id_review/status', updateReviewStatus);
 
 module.exports = router;

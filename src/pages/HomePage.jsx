@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api.js';
 import AttractionCard from '../components/AttractionCard.jsx';
 import EventCard from '../components/EventCard.jsx';
+import heroImage from '../assets/bg.jpg';
 
 export default function HomePage() {
   const [attractions, setAttractions] = useState([]);
@@ -25,7 +26,7 @@ export default function HomePage() {
       <section 
         className="relative min-h-[80vh] md:min-h-screen flex items-center justify-center text-center rounded-2xl md:rounded-3xl overflow-hidden "
         style={{
-          backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80")',
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${heroImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'

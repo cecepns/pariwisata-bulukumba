@@ -9,6 +9,7 @@ const adminNavItems = [
   { to: '/admin/attractions', label: 'Kelola Objek Wisata' },
   { to: '/admin/categories', label: 'Kelola Kategori' },
   { to: '/admin/events', label: 'Kelola Event' },
+  { to: '/admin/reviews', label: 'Kelola Ulasan' },
 ];
 
 export default function AdminLayout() {

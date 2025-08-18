@@ -18,6 +18,7 @@ import ManageCategories from './pages/admin/ManageCategories.jsx';
 import FormCategory from './pages/admin/FormCategory.jsx';
 import ManageEvents from './pages/admin/ManageEvents.jsx';
 import FormEvent from './pages/admin/FormEvent.jsx';
+import ManageReviews from './pages/admin/ManageReviews.jsx';
 
 /**
  * ANCHOR: App
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="/admin/events" element={<ManageEvents />} />
         <Route path="/admin/events/new" element={<FormEvent />} />
         <Route path="/admin/events/:id/edit" element={<FormEvent />} />
+        <Route path="/admin/reviews" element={<ManageReviews />} />
       </Route>
     </Routes>
   );
