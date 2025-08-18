@@ -70,9 +70,9 @@ export default function HomePage() {
           <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold">Destinasi Unggulan</h2>
           <Link to="/attractions" className="link link-primary text-sm md:text-base">Lihat semua</Link>
         </div>
-        {attractions.length > 0 ? (
+        {attractions?.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {attractions.map((a) => (
+            {attractions?.map((a) => (
               <AttractionCard key={a.id_wisata} attraction={a} />
             ))}
           </div>

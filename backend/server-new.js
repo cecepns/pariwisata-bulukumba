@@ -640,7 +640,7 @@ async function deleteCategory(req, res) {
 }
 
 // Upload configuration and functions
-const uploadsDir = path.join(__dirname, './uploads-bulukumba-wisata');
+const uploadsDir = path.join(__dirname, './uploads-bukukumba-wisata');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -710,8 +710,8 @@ router.get('/galleries/:id', getGalleryById);
 router.get('/categories', getAllCategories);
 router.get('/categories/:id', getCategoryById);
 
-router.use('/uploads', express.static(path.join(__dirname, 'uploads-bulukumba-wisata')));
-
+// Serve uploaded files (public access, no auth required)
+router.use('/uploads', express.static(path.join(__dirname, 'uploads-bukukumba-wisata')));
 
 // Protected content management
 router.use(requireAuth);
