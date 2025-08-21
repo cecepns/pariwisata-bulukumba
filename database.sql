@@ -1,7 +1,7 @@
 -- database.sql
 
-CREATE DATABASE IF NOT EXISTS bulukumba_tourism_db;
-USE bulukumba_tourism_db;
+CREATE DATABASE IF NOT EXISTS isad8273_bulukumba_tourism;
+USE isad8273_bulukumba_tourism;
 
 -- Tabel Admin (login admin)
 CREATE TABLE IF NOT EXISTS admin (
@@ -108,12 +108,12 @@ CREATE TABLE IF NOT EXISTS `event` (
 -- Dimodifikasi untuk mendukung galeri wisata, hotel, dan restoran
 CREATE TABLE IF NOT EXISTS galeri (
     id_galeri INT AUTO_INCREMENT PRIMARY KEY,
-    id_wisata INT NULL,
-    id_hotel INT NULL,
-    id_restoran INT NULL,
+    id_wisata INT DEFAULT NULL,
+    id_hotel INT DEFAULT NULL,
+    id_restoran INT DEFAULT NULL,
     gambar VARCHAR(255) NOT NULL,
-    keterangan VARCHAR(255),
-    nama VARCHAR(255),
+    keterangan VARCHAR(255) DEFAULT NULL,
+    nama VARCHAR(255) DEFAULT NULL,
     KEY idx_galeri_id_wisata (id_wisata),
     KEY idx_galeri_id_hotel (id_hotel),
     KEY idx_galeri_id_restoran (id_restoran),
@@ -146,13 +146,13 @@ CREATE TABLE IF NOT EXISTS galeri (
 -- Manual review: rating 1-2 atau mengandung kata spam
 CREATE TABLE IF NOT EXISTS review (
     id_review INT AUTO_INCREMENT PRIMARY KEY,
-    id_wisata INT NULL,
-    id_hotel INT NULL,
-    id_restoran INT NULL,
+    id_wisata INT DEFAULT NULL,
+    id_hotel INT DEFAULT NULL,
+    id_restoran INT DEFAULT NULL,
     nama_reviewer VARCHAR(150) NOT NULL,
-    email_reviewer VARCHAR(255),
+    email_reviewer VARCHAR(255) DEFAULT NULL,
     rating DECIMAL(2,1) NOT NULL,
-    komentar TEXT,
+    komentar TEXT DEFAULT NULL,
     status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     KEY idx_review_id_wisata (id_wisata),
@@ -189,5 +189,194 @@ INSERT IGNORE INTO admin (username, password) VALUES (
   '$2b$10$abcdefghijklmnopqrstuv'
 );
 
+-- === MIGRATION SCRIPTS ===
+-- Script untuk update database yang sudah ada agar sesuai dengan schema terbaru
 
+-- Migration untuk memperbaiki tabel galeri jika kolom id_hotel dan id_restoran belum ada
+-- Pertama, pastikan semua kolom reference boleh NULL
+ALTER TABLE galeri MODIFY COLUMN id_wisata INT DEFAULT NULL;
 
+-- Tambahkan kolom id_hotel jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'galeri' 
+     AND COLUMN_NAME = 'id_hotel') = 0,
+    'ALTER TABLE galeri ADD COLUMN id_hotel INT DEFAULT NULL AFTER id_wisata',
+    'ALTER TABLE galeri MODIFY COLUMN id_hotel INT DEFAULT NULL'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tambahkan kolom id_restoran jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'galeri' 
+     AND COLUMN_NAME = 'id_restoran') = 0,
+    'ALTER TABLE galeri ADD COLUMN id_restoran INT DEFAULT NULL AFTER id_hotel',
+    'ALTER TABLE galeri MODIFY COLUMN id_restoran INT DEFAULT NULL'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Pastikan kolom keterangan dan nama juga boleh NULL
+ALTER TABLE galeri MODIFY COLUMN keterangan VARCHAR(255) DEFAULT NULL;
+ALTER TABLE galeri MODIFY COLUMN nama VARCHAR(255) DEFAULT NULL;
+
+-- === MIGRATION UNTUK TABEL REVIEW ===
+-- Tambahkan kolom id_hotel di tabel review jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'review' 
+     AND COLUMN_NAME = 'id_hotel') = 0,
+    'ALTER TABLE review ADD COLUMN id_hotel INT DEFAULT NULL AFTER id_wisata',
+    'ALTER TABLE review MODIFY COLUMN id_hotel INT DEFAULT NULL'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tambahkan kolom id_restoran di tabel review jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'review' 
+     AND COLUMN_NAME = 'id_restoran') = 0,
+    'ALTER TABLE review ADD COLUMN id_restoran INT DEFAULT NULL AFTER id_hotel',
+    'ALTER TABLE review MODIFY COLUMN id_restoran INT DEFAULT NULL'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tambahkan foreign key untuk id_hotel di tabel review jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'review' 
+     AND CONSTRAINT_NAME = 'fk_review_hotel') = 0,
+    'ALTER TABLE review ADD CONSTRAINT fk_review_hotel FOREIGN KEY (id_hotel) REFERENCES hotel(id_hotel) ON UPDATE CASCADE ON DELETE CASCADE',
+    'SELECT "Foreign key fk_review_hotel already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tambahkan foreign key untuk id_restoran di tabel review jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'review' 
+     AND CONSTRAINT_NAME = 'fk_review_restoran') = 0,
+    'ALTER TABLE review ADD CONSTRAINT fk_review_restoran FOREIGN KEY (id_restoran) REFERENCES restoran(id_restoran) ON UPDATE CASCADE ON DELETE CASCADE',
+    'SELECT "Foreign key fk_review_restoran already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tambahkan index untuk id_hotel di tabel review jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'review' 
+     AND INDEX_NAME = 'idx_review_id_hotel') = 0,
+    'ALTER TABLE review ADD KEY idx_review_id_hotel (id_hotel)',
+    'SELECT "Index idx_review_id_hotel already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tambahkan index untuk id_restoran di tabel review jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'review' 
+     AND INDEX_NAME = 'idx_review_id_restoran') = 0,
+    'ALTER TABLE review ADD KEY idx_review_id_restoran (id_restoran)',
+    'SELECT "Index idx_review_id_restoran already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Pastikan kolom reference di tabel review boleh NULL
+ALTER TABLE review MODIFY COLUMN id_wisata INT DEFAULT NULL;
+ALTER TABLE review MODIFY COLUMN email_reviewer VARCHAR(255) DEFAULT NULL;
+ALTER TABLE review MODIFY COLUMN komentar TEXT DEFAULT NULL;
+
+-- Tambahkan foreign key untuk id_hotel jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'galeri' 
+     AND CONSTRAINT_NAME = 'fk_galeri_hotel') = 0,
+    'ALTER TABLE galeri ADD CONSTRAINT fk_galeri_hotel FOREIGN KEY (id_hotel) REFERENCES hotel(id_hotel) ON UPDATE CASCADE ON DELETE CASCADE',
+    'SELECT "Foreign key fk_galeri_hotel already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tambahkan foreign key untuk id_restoran jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'galeri' 
+     AND CONSTRAINT_NAME = 'fk_galeri_restoran') = 0,
+    'ALTER TABLE galeri ADD CONSTRAINT fk_galeri_restoran FOREIGN KEY (id_restoran) REFERENCES restoran(id_restoran) ON UPDATE CASCADE ON DELETE CASCADE',
+    'SELECT "Foreign key fk_galeri_restoran already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tambahkan index untuk id_hotel jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'galeri' 
+     AND INDEX_NAME = 'idx_galeri_id_hotel') = 0,
+    'ALTER TABLE galeri ADD KEY idx_galeri_id_hotel (id_hotel)',
+    'SELECT "Index idx_galeri_id_hotel already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tambahkan index untuk id_restoran jika belum ada
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'galeri' 
+     AND INDEX_NAME = 'idx_galeri_id_restoran') = 0,
+    'ALTER TABLE galeri ADD KEY idx_galeri_id_restoran (id_restoran)',
+    'SELECT "Index idx_galeri_id_restoran already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tambahkan check constraint jika didukung oleh versi MySQL
+-- Note: Check constraint hanya didukung di MySQL 8.0+
+-- Jika error, abaikan saja karena constraint ini opsional
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE TABLE_SCHEMA = DATABASE() 
+     AND TABLE_NAME = 'galeri' 
+     AND CONSTRAINT_NAME = 'chk_galeri_reference') = 0 
+     AND @@version >= '8.0',
+    'ALTER TABLE galeri ADD CONSTRAINT chk_galeri_reference CHECK ((id_wisata IS NOT NULL AND id_hotel IS NULL AND id_restoran IS NULL) OR (id_wisata IS NULL AND id_hotel IS NOT NULL AND id_restoran IS NULL) OR (id_wisata IS NULL AND id_hotel IS NULL AND id_restoran IS NOT NULL))',
+    'SELECT "Check constraint not needed or already exists" as message'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tampilkan pesan sukses
+SELECT 'Database migration completed successfully!' as message;
