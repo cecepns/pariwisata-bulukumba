@@ -377,6 +377,7 @@ async function getAllReviews(req, res) {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const status = req.query.status;
+    const type = req.query.type;
     const offset = (page - 1) * limit;
     
     let whereClause = '1=1';
@@ -385,6 +386,14 @@ async function getAllReviews(req, res) {
     if (status) {
       whereClause += ' AND r.status = ?';
       params.push(status);
+    }
+    
+    if (type) {
+      if (type === 'wisata') {
+        whereClause += ' AND r.id_wisata IS NOT NULL';
+      } else if (type === 'hotel') {
+        whereClause += ' AND r.id_hotel IS NOT NULL';
+      }
     }
     
     // Get reviews with wisata and hotel info
@@ -440,7 +449,7 @@ async function updateReviewStatus(req, res) {
     }
     
     // Get review info
-    const review = await query('SELECT id_wisata FROM review WHERE id_review = ?', [id_review]);
+    const review = await query('SELECT id_wisata, id_hotel FROM review WHERE id_review = ?', [id_review]);
     if (!review || review.length === 0) {
       return res.status(404).json({ message: 'Review tidak ditemukan' });
     }
@@ -448,9 +457,13 @@ async function updateReviewStatus(req, res) {
     // Update status
     await query('UPDATE review SET status = ? WHERE id_review = ?', [status, id_review]);
     
-    // Update wisata rating jika status berubah ke approved
+    // Update rating jika status berubah ke approved
     if (status === 'approved') {
-      await updateWisataRating(review[0].id_wisata);
+      if (review[0].id_wisata) {
+        await updateWisataRating(review[0].id_wisata);
+      } else if (review[0].id_hotel) {
+        await updateHotelRating(review[0].id_hotel);
+      }
     }
     
     res.json({
@@ -472,9 +485,14 @@ async function getPendingReviews(req, res) {
     // Get pending reviews
     const reviews = await query(`
       SELECT r.id_review, r.nama_reviewer, r.email_reviewer, r.rating, r.komentar, 
-             r.created_at, w.nama_wisata
+             r.created_at, w.nama_wisata, h.nama_hotel,
+             CASE 
+               WHEN r.id_wisata IS NOT NULL THEN 'wisata'
+               WHEN r.id_hotel IS NOT NULL THEN 'hotel'
+             END as review_type
       FROM review r
-      JOIN wisata w ON r.id_wisata = w.id_wisata
+      LEFT JOIN wisata w ON r.id_wisata = w.id_wisata
+      LEFT JOIN hotel h ON r.id_hotel = h.id_hotel
       WHERE r.status = 'pending'
       ORDER BY r.created_at ASC
       LIMIT ? OFFSET ?
@@ -1499,6 +1517,30 @@ async function initializeDatabase() {
         fasilitas TEXT,
         peta_wisata TEXT,
         keterangan TEXT,
+        average_rating DECIMAL(3,2) DEFAULT 0.00,
+        total_reviews INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_kategori) REFERENCES kategori(id_kategori) ON DELETE SET NULL
+      )
+    `);
+
+    // Create hotel table
+    await query(`
+      CREATE TABLE IF NOT EXISTS hotel (
+        id_hotel INT AUTO_INCREMENT PRIMARY KEY,
+        id_kategori INT,
+        nama_hotel VARCHAR(200) NOT NULL,
+        deskripsi TEXT,
+        harga_kamar DECIMAL(10,2),
+        alamat_hotel TEXT,
+        nomor_telepon VARCHAR(20),
+        website VARCHAR(255),
+        fasilitas TEXT,
+        peta_hotel TEXT,
+        keterangan TEXT,
+        average_rating DECIMAL(3,2) DEFAULT 0.00,
+        total_reviews INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (id_kategori) REFERENCES kategori(id_kategori) ON DELETE SET NULL
@@ -1524,35 +1566,54 @@ async function initializeDatabase() {
     await query(`
       CREATE TABLE IF NOT EXISTS galeri (
         id_galeri INT AUTO_INCREMENT PRIMARY KEY,
-        id_wisata INT,
+        id_wisata INT NULL,
+        id_hotel INT NULL,
         gambar VARCHAR(500) NOT NULL,
         keterangan TEXT,
         nama VARCHAR(200),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (id_wisata) REFERENCES wisata(id_wisata) ON DELETE CASCADE
+        FOREIGN KEY (id_wisata) REFERENCES wisata(id_wisata) ON DELETE CASCADE,
+        FOREIGN KEY (id_hotel) REFERENCES hotel(id_hotel) ON DELETE CASCADE,
+        -- Memastikan hanya salah satu yang terisi (wisata atau hotel)
+        CONSTRAINT chk_galeri_reference CHECK (
+            (id_wisata IS NOT NULL AND id_hotel IS NULL) OR 
+            (id_wisata IS NULL AND id_hotel IS NOT NULL)
+        )
       )
     `);
 
-    // Add rating columns to wisata table
-    await query(`
-      ALTER TABLE wisata 
-      ADD COLUMN IF NOT EXISTS average_rating DECIMAL(3,2) DEFAULT 0.00,
-      ADD COLUMN IF NOT EXISTS total_reviews INT DEFAULT 0
-    `);
+
 
     // Create review table
     await query(`
       CREATE TABLE IF NOT EXISTS review (
         id_review INT AUTO_INCREMENT PRIMARY KEY,
-        id_wisata INT NOT NULL,
+        id_wisata INT NULL,
+        id_hotel INT NULL,
         nama_reviewer VARCHAR(150) NOT NULL,
         email_reviewer VARCHAR(255),
         rating DECIMAL(2,1) NOT NULL,
         komentar TEXT,
         status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (id_wisata) REFERENCES wisata(id_wisata) ON DELETE CASCADE
+        KEY idx_review_id_wisata (id_wisata),
+        KEY idx_review_id_hotel (id_hotel),
+        KEY idx_review_status (status),
+        KEY idx_review_created_at (created_at),
+        CONSTRAINT fk_review_wisata FOREIGN KEY (id_wisata)
+            REFERENCES wisata(id_wisata)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE,
+        CONSTRAINT fk_review_hotel FOREIGN KEY (id_hotel)
+            REFERENCES hotel(id_hotel)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE,
+        -- Memastikan hanya salah satu yang terisi (wisata atau hotel)
+        CONSTRAINT chk_review_reference CHECK (
+            (id_wisata IS NOT NULL AND id_hotel IS NULL) OR 
+            (id_wisata IS NULL AND id_hotel IS NOT NULL)
+        )
       )
     `);
 

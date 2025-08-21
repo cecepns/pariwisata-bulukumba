@@ -9,9 +9,10 @@ const ManageReviews = () => {
   const [pagination, setPagination] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(null);
 
-  const loadReviews = async (page = 1, status = '') => {
+  const loadReviews = async (page = 1, status = '', type = '') => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -21,6 +22,10 @@ const ManageReviews = () => {
       
       if (status) {
         params.append('status', status);
+      }
+      
+      if (type) {
+        params.append('type', type);
       }
       
       const response = await api.get(`/admin/reviews?${params}`);
@@ -34,8 +39,8 @@ const ManageReviews = () => {
   };
 
   useEffect(() => {
-    loadReviews(currentPage, statusFilter);
-  }, [currentPage, statusFilter]);
+    loadReviews(currentPage, statusFilter, typeFilter);
+  }, [currentPage, statusFilter, typeFilter]);
 
   const handleStatusChange = async (reviewId, newStatus) => {
     try {
@@ -43,7 +48,7 @@ const ManageReviews = () => {
       await api.put(`/admin/reviews/${reviewId}/status`, { status: newStatus });
       
       // Refresh the list
-      await loadReviews(currentPage, statusFilter);
+      await loadReviews(currentPage, statusFilter, typeFilter);
       
       // Show success message using toast
       toast.success(`Review berhasil ${newStatus === 'approved' ? 'disetujui' : 'ditolak'}`);
@@ -81,6 +86,24 @@ const ManageReviews = () => {
     return <span className={`badge ${config.color}`}>{config.text}</span>;
   };
 
+  const getTypeBadge = (type) => {
+    const typeConfig = {
+      wisata: { color: 'badge-info', text: 'Wisata' },
+      hotel: { color: 'badge-primary', text: 'Hotel' }
+    };
+    
+    const config = typeConfig[type] || typeConfig.wisata;
+    return <span className={`badge ${config.color}`}>{config.text}</span>;
+  };
+
+  const getEntityName = (review) => {
+    if (review.review_type === 'hotel') {
+      return review.nama_hotel || 'Hotel tidak ditemukan';
+    } else {
+      return review.nama_wisata || 'Wisata tidak ditemukan';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -94,7 +117,7 @@ const ManageReviews = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Kelola Ulasan</h1>
         
-        {/* Filter */}
+        {/* Filters */}
         <div className="flex space-x-4">
           <select
             value={statusFilter}
@@ -118,7 +141,8 @@ const ManageReviews = () => {
           <table className="table table-zebra w-full">
             <thead>
               <tr>
-                <th>Wisata</th>
+                <th>Jenis</th>
+                <th>Nama Tempat</th>
                 <th>Reviewer</th>
                 <th>Rating</th>
                 <th>Komentar</th>
@@ -130,7 +154,7 @@ const ManageReviews = () => {
             <tbody>
               {reviews.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-8 text-gray-500">
+                  <td colSpan="8" className="text-center py-8 text-gray-500">
                     Tidak ada ulasan yang ditemukan
                   </td>
                 </tr>
@@ -138,7 +162,10 @@ const ManageReviews = () => {
                 reviews.map((review) => (
                   <tr key={review.id_review}>
                     <td>
-                      <div className="font-medium">{review.nama_wisata}</div>
+                      {getTypeBadge(review.review_type)}
+                    </td>
+                    <td>
+                      <div className="font-medium">{getEntityName(review)}</div>
                     </td>
                     <td>
                       <div>
