@@ -123,6 +123,16 @@ function validateReviewInput(reviewData) {
     errors.push('Komentar maksimal 1000 karakter');
   }
   
+  // Entity validation: harus ada id_wisata atau id_hotel
+  if (!reviewData.id_wisata && !reviewData.id_hotel) {
+    errors.push('ID wisata atau hotel harus disediakan');
+  }
+  
+  // Entity validation: tidak boleh ada keduanya
+  if (reviewData.id_wisata && reviewData.id_hotel) {
+    errors.push('Review hanya bisa untuk wisata atau hotel, tidak keduanya');
+  }
+  
   return errors;
 }
 
@@ -175,12 +185,39 @@ async function updateWisataRating(id_wisata) {
   }
 }
 
+// Update hotel rating statistics
+async function updateHotelRating(id_hotel) {
+  try {
+    const stats = await query(`
+      SELECT 
+        COUNT(*) as total_reviews,
+        AVG(rating) as average_rating
+      FROM review 
+      WHERE id_hotel = ? AND status = 'approved'
+    `, [id_hotel]);
+    
+    const totalReviews = stats[0].total_reviews || 0;
+    const averageRating = parseFloat(stats[0].average_rating || 0).toFixed(2);
+    
+    await query(`
+      UPDATE hotel 
+      SET average_rating = ?, total_reviews = ?
+      WHERE id_hotel = ?
+    `, [averageRating, totalReviews, id_hotel]);
+    
+    return { total_reviews: totalReviews, average_rating: averageRating };
+  } catch (error) {
+    console.error('Error updating hotel rating:', error);
+    throw error;
+  }
+}
+
 // ===== CONTROLLERS =====
 
 // Review Controllers
 async function createReview(req, res) {
   try {
-    const { id_wisata, nama_reviewer, email_reviewer, rating, komentar } = req.body;
+    const { id_wisata, id_hotel, nama_reviewer, email_reviewer, rating, komentar } = req.body;
     
     // Validasi input
     const validationErrors = validateReviewInput(req.body);
@@ -191,10 +228,26 @@ async function createReview(req, res) {
       });
     }
     
-    // Cek apakah wisata exists
-    const wisata = await query('SELECT id_wisata FROM wisata WHERE id_wisata = ?', [id_wisata]);
-    if (!wisata || wisata.length === 0) {
-      return res.status(404).json({ message: 'Wisata tidak ditemukan' });
+    // Cek apakah wisata atau hotel exists
+    let entityType = '';
+    let entityId = null;
+    
+    if (id_wisata) {
+      const wisata = await query('SELECT id_wisata FROM wisata WHERE id_wisata = ?', [id_wisata]);
+      if (!wisata || wisata.length === 0) {
+        return res.status(404).json({ message: 'Wisata tidak ditemukan' });
+      }
+      entityType = 'wisata';
+      entityId = id_wisata;
+    } else if (id_hotel) {
+      const hotel = await query('SELECT id_hotel FROM hotel WHERE id_hotel = ?', [id_hotel]);
+      if (!hotel || hotel.length === 0) {
+        return res.status(404).json({ message: 'Hotel tidak ditemukan' });
+      }
+      entityType = 'hotel';
+      entityId = id_hotel;
+    } else {
+      return res.status(400).json({ message: 'ID wisata atau hotel harus disediakan' });
     }
     
     // Determine review status
@@ -202,10 +255,11 @@ async function createReview(req, res) {
     
     // Save review ke database
     const result = await query(`
-      INSERT INTO review (id_wisata, nama_reviewer, email_reviewer, rating, komentar, status)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO review (id_wisata, id_hotel, nama_reviewer, email_reviewer, rating, komentar, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `, [
-      id_wisata,
+      id_wisata || null,
+      id_hotel || null,
       nama_reviewer.trim(),
       email_reviewer ? email_reviewer.trim() : null,
       rating,
@@ -213,9 +267,13 @@ async function createReview(req, res) {
       status
     ]);
     
-    // Update wisata rating jika review approved
+    // Update rating jika review approved
     if (status === 'approved') {
-      await updateWisataRating(id_wisata);
+      if (entityType === 'wisata') {
+        await updateWisataRating(entityId);
+      } else if (entityType === 'hotel') {
+        await updateHotelRating(entityId);
+      }
     }
     
     res.status(201).json({
@@ -273,6 +331,47 @@ async function getReviewsByWisata(req, res) {
   }
 }
 
+async function getReviewsByHotel(req, res) {
+  try {
+    const { id_hotel } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    
+    // Get reviews
+    const reviews = await query(`
+      SELECT id_review, nama_reviewer, rating, komentar, created_at
+      FROM review 
+      WHERE id_hotel = ? AND status = 'approved'
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `, [id_hotel, limit, offset]);
+    
+    // Get total count
+    const totalResult = await query(`
+      SELECT COUNT(*) as total
+      FROM review 
+      WHERE id_hotel = ? AND status = 'approved'
+    `, [id_hotel]);
+    
+    const total = totalResult[0].total;
+    
+    res.json({
+      data: reviews,
+      pagination: {
+        page: page,
+        limit: limit,
+        total: total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error getting hotel reviews:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+}
+
 async function getAllReviews(req, res) {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -288,12 +387,18 @@ async function getAllReviews(req, res) {
       params.push(status);
     }
     
-    // Get reviews with wisata info
+    // Get reviews with wisata and hotel info
     const reviews = await query(`
       SELECT r.id_review, r.nama_reviewer, r.email_reviewer, r.rating, r.komentar, 
-             r.status, r.created_at, w.nama_wisata
+             r.status, r.created_at, 
+             w.nama_wisata, h.nama_hotel,
+             CASE 
+               WHEN r.id_wisata IS NOT NULL THEN 'wisata'
+               WHEN r.id_hotel IS NOT NULL THEN 'hotel'
+             END as review_type
       FROM review r
-      JOIN wisata w ON r.id_wisata = w.id_wisata
+      LEFT JOIN wisata w ON r.id_wisata = w.id_wisata
+      LEFT JOIN hotel h ON r.id_hotel = h.id_hotel
       WHERE ${whereClause}
       ORDER BY r.created_at DESC
       LIMIT ? OFFSET ?
@@ -674,6 +779,187 @@ async function deleteEvent(req, res) {
   }
 }
 
+// Hotel Controllers
+async function getAllHotels(req, res) {
+  try {
+    const rows = await query(
+      `SELECT
+         h.id_hotel,
+         h.id_kategori,
+         k.nama_kategori,
+         h.nama_hotel,
+         h.deskripsi,
+         h.harga_kamar,
+         h.alamat_hotel,
+         h.nomor_telepon,
+         h.website,
+         h.fasilitas,
+         h.peta_hotel,
+         h.keterangan,
+         h.average_rating,
+         h.total_reviews,
+         (SELECT gg.gambar FROM galeri gg WHERE gg.id_hotel = h.id_hotel ORDER BY gg.id_galeri ASC LIMIT 1) AS cover_image_url
+       FROM hotel h
+       LEFT JOIN kategori k ON k.id_kategori = h.id_kategori
+       ORDER BY h.id_hotel DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('getAllHotels error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+async function getHotelById(req, res) {
+  try {
+    const { id } = req.params;
+    const rows = await query(
+      `SELECT
+         h.id_hotel,
+         h.id_kategori,
+         k.nama_kategori,
+         h.nama_hotel,
+         h.deskripsi,
+         h.harga_kamar,
+         h.alamat_hotel,
+         h.nomor_telepon,
+         h.website,
+         h.fasilitas,
+         h.peta_hotel,
+         h.keterangan,
+         h.average_rating,
+         h.total_reviews,
+         (SELECT gg.gambar FROM galeri gg WHERE gg.id_hotel = h.id_hotel ORDER BY gg.id_galeri ASC LIMIT 1) AS cover_image_url
+       FROM hotel h
+       LEFT JOIN kategori k ON k.id_kategori = h.id_kategori
+       WHERE h.id_hotel = ?
+       LIMIT 1`,
+      [id]
+    );
+    if (!rows || rows.length === 0) return res.status(404).json({ message: 'Not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('getHotelById error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+async function createHotel(req, res) {
+  try {
+    const {
+      category_id,
+      name,
+      description,
+      room_price,
+      address,
+      phone,
+      website,
+      facilities,
+      gmaps_iframe_url,
+      keterangan,
+    } = req.body || {};
+
+    if (!name) return res.status(400).json({ message: 'Name is required' });
+
+    const result = await query(
+      `INSERT INTO hotel
+        (id_kategori, nama_hotel, deskripsi, harga_kamar, alamat_hotel, nomor_telepon, website, fasilitas, peta_hotel, keterangan)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        category_id || null,
+        name,
+        description || null,
+        room_price || null,
+        address || null,
+        phone || null,
+        website || null,
+        facilities || null,
+        gmaps_iframe_url || null,
+        keterangan || null,
+      ]
+    );
+
+    const newId = result.insertId;
+    res.status(201).json({ id_hotel: newId });
+  } catch (err) {
+    console.error('createHotel error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+async function updateHotel(req, res) {
+  try {
+    const { id } = req.params;
+    const map = {
+      category_id: 'id_kategori',
+      name: 'nama_hotel',
+      description: 'deskripsi',
+      room_price: 'harga_kamar',
+      address: 'alamat_hotel',
+      phone: 'nomor_telepon',
+      website: 'website',
+      facilities: 'fasilitas',
+      gmaps_iframe_url: 'peta_hotel',
+      keterangan: 'keterangan',
+    };
+
+    const updates = [];
+    const params = [];
+    for (const [apiField, column] of Object.entries(map)) {
+      if (Object.prototype.hasOwnProperty.call(req.body, apiField)) {
+        updates.push(`${column} = ?`);
+        params.push(req.body[apiField]);
+      }
+    }
+
+    if (updates.length > 0) {
+      params.push(id);
+      await query(`UPDATE hotel SET ${updates.join(', ')} WHERE id_hotel = ?`, params);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'cover_image_url')) {
+      const cover = req.body.cover_image_url;
+      if (cover) {
+        const existing = await query(
+          `SELECT id_galeri FROM galeri WHERE id_hotel = ? ORDER BY id_galeri ASC LIMIT 1`,
+          [id]
+        );
+        if (existing && existing.length > 0) {
+          await query(`UPDATE galeri SET gambar = ?, keterangan = ?, nama = ? WHERE id_galeri = ?`, [
+            cover,
+            'Cover',
+            'Cover',
+            existing[0].id_galeri,
+          ]);
+        } else {
+          await query(`INSERT INTO galeri (id_hotel, gambar, keterangan, nama) VALUES (?, ?, ?, ?)`, [
+            id,
+            cover,
+            'Cover',
+            'Cover',
+          ]);
+        }
+      }
+    }
+
+    res.json({ message: 'Updated' });
+  } catch (err) {
+    console.error('updateHotel error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+async function deleteHotel(req, res) {
+  try {
+    const { id } = req.params;
+    await query('DELETE FROM hotel WHERE id_hotel = ?', [id]);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    console.error('deleteHotel error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
 // Gallery Controllers
 async function getAllGalleries(req, res) {
   try {
@@ -681,12 +967,15 @@ async function getAllGalleries(req, res) {
       `SELECT 
          g.id_galeri,
          g.id_wisata,
+         g.id_hotel,
          g.gambar,
          g.keterangan,
          g.nama,
-         w.nama_wisata
+         w.nama_wisata,
+         h.nama_hotel
        FROM galeri g
        LEFT JOIN wisata w ON g.id_wisata = w.id_wisata
+       LEFT JOIN hotel h ON g.id_hotel = h.id_hotel
        ORDER BY g.id_galeri DESC`
     );
     res.json(rows);
@@ -703,6 +992,7 @@ async function getGalleryById(req, res) {
       `SELECT 
          g.id_galeri,
          g.id_wisata,
+         g.id_hotel,
          g.gambar,
          g.keterangan,
          g.nama
@@ -724,12 +1014,12 @@ async function getGalleryById(req, res) {
 
 async function createGallery(req, res) {
   try {
-    const { id_wisata, gambar, keterangan, nama } = req.body || {};
-    if (!id_wisata) return res.status(400).json({ message: 'id_wisata is required' });
+    const { id_wisata, id_hotel, gambar, keterangan, nama } = req.body || {};
+    if (!id_wisata && !id_hotel) return res.status(400).json({ message: 'id_wisata or id_hotel is required' });
     if (!gambar) return res.status(400).json({ message: 'gambar is required' });
     const result = await query(
-      `INSERT INTO galeri (id_wisata, gambar, keterangan, nama) VALUES (?, ?, ?, ?)`,
-      [id_wisata, gambar, keterangan || null, nama || null]
+      `INSERT INTO galeri (id_wisata, id_hotel, gambar, keterangan, nama) VALUES (?, ?, ?, ?, ?)`,
+      [id_wisata || null, id_hotel || null, gambar, keterangan || null, nama || null]
     );
     res.status(201).json({ id_galeri: result.insertId });
   } catch (err) {
@@ -741,7 +1031,7 @@ async function createGallery(req, res) {
 async function updateGallery(req, res) {
   try {
     const { id } = req.params;
-    const { id_wisata, gambar, keterangan, nama } = req.body;
+    const { id_wisata, id_hotel, gambar, keterangan, nama } = req.body;
     
     // If updating image, get the old image path to delete it later
     let oldImagePath = null;
@@ -758,6 +1048,10 @@ async function updateGallery(req, res) {
     if (id_wisata !== undefined) {
       updates.push('id_wisata = ?');
       params.push(id_wisata);
+    }
+    if (id_hotel !== undefined) {
+      updates.push('id_hotel = ?');
+      params.push(id_hotel);
     }
     if (gambar !== undefined) {
       updates.push('gambar = ?');
@@ -1038,6 +1332,9 @@ router.get('/health', (_req, res) => {
 router.get('/attractions', getAllAttractions);
 router.get('/attractions/:id', getAttractionById);
 
+router.get('/hotels', getAllHotels);
+router.get('/hotels/:id', getHotelById);
+
 router.get('/events', getAllEvents);
 router.get('/events/:id', getEventById);
 
@@ -1050,6 +1347,7 @@ router.get('/categories/:id', getCategoryById);
 // Review routes (public)
 router.post('/reviews', createReview);
 router.get('/reviews/wisata/:id_wisata', getReviewsByWisata);
+router.get('/reviews/hotel/:id_hotel', getReviewsByHotel);
 
 // Admin login (public)
 router.post('/admin/login', login);
@@ -1064,6 +1362,13 @@ adminRouter.get('/attractions/:id', getAttractionById);
 adminRouter.post('/attractions', createAttraction);
 adminRouter.put('/attractions/:id', updateAttraction);
 adminRouter.delete('/attractions/:id', deleteAttraction);
+
+// Admin hotels
+adminRouter.get('/hotels', getAllHotels);
+adminRouter.get('/hotels/:id', getHotelById);
+adminRouter.post('/hotels', createHotel);
+adminRouter.put('/hotels/:id', updateHotel);
+adminRouter.delete('/hotels/:id', deleteHotel);
 
 // Admin events
 adminRouter.get('/events', getAllEvents);

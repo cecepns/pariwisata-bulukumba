@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import RatingStars from './RatingStars';
 
-const ReviewList = ({ wisataId }) => {
+const ReviewList = ({ wisataId, hotelId }) => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
@@ -11,7 +11,14 @@ const ReviewList = ({ wisataId }) => {
   const loadReviews = async (page = 1) => {
     try {
       setLoading(true);
-      const response = await api.get(`/reviews/wisata/${wisataId}?page=${page}&limit=10`);
+      let endpoint = '';
+      if (wisataId) {
+        endpoint = `/reviews/wisata/${wisataId}`;
+      } else if (hotelId) {
+        endpoint = `/reviews/hotel/${hotelId}`;
+      }
+      
+      const response = await api.get(`${endpoint}?page=${page}&limit=10`);
       setReviews(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
@@ -23,7 +30,7 @@ const ReviewList = ({ wisataId }) => {
 
   useEffect(() => {
     loadReviews();
-  }, [wisataId]);
+  }, [wisataId, hotelId]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -68,7 +75,7 @@ const ReviewList = ({ wisataId }) => {
       
       {reviews.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          <p>Belum ada ulasan untuk wisata ini.</p>
+          <p>Belum ada ulasan untuk {hotelId ? 'hotel' : 'wisata'} ini.</p>
           <p className="text-sm">Jadilah yang pertama memberikan ulasan!</p>
         </div>
       ) : (

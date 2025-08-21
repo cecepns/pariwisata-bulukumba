@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import api from '../services/api';
 import RatingStars from './RatingStars';
 
-const ReviewForm = ({ wisataId, onReviewSubmitted }) => {
+const ReviewForm = ({ wisataId, hotelId, onReviewSubmitted }) => {
   const [formData, setFormData] = useState({
     nama_reviewer: '',
     email_reviewer: '',
@@ -36,10 +36,17 @@ const ReviewForm = ({ wisataId, onReviewSubmitted }) => {
     setSuccess(false);
     
     try {
-      const response = await api.post('/reviews', {
-        id_wisata: wisataId,
+      const payload = {
         ...formData
-      });
+      };
+      
+      if (wisataId) {
+        payload.id_wisata = wisataId;
+      } else if (hotelId) {
+        payload.id_hotel = hotelId;
+      }
+      
+      const response = await api.post('/reviews', payload);
       
       setSuccess(true);
       setFormData({

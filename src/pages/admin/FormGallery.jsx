@@ -6,28 +6,41 @@ import { getImageUrl } from '../../utils/imageUrl.js';
 
 export default function FormGallery() {
   const navigate = useNavigate();
-  const { id, wisataId } = useParams();
+  const { id, wisataId, hotelId } = useParams();
   const isEdit = !!id;
   
   const [loading, setLoading] = useState(false);
-  const [wisataInfo, setWisataInfo] = useState(null);
+  const [entityInfo, setEntityInfo] = useState(null);
+  const [entityType, setEntityType] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [formData, setFormData] = useState({
     gambar: '',
     keterangan: '',
     nama: '',
-    id_wisata: wisataId
+    id_wisata: wisataId || null,
+    id_hotel: hotelId || null
   });
 
   useEffect(() => {
-    // Load wisata info
-    api.get(`/admin/attractions/${wisataId}`).then((res) => {
-      setWisataInfo(res.data);
-    }).catch(() => {
-      // If wisata not found, redirect back
-      navigate('/admin/attractions');
-    });
+    // Load entity info
+    if (wisataId) {
+      setEntityType('wisata');
+      api.get(`/admin/attractions/${wisataId}`).then((res) => {
+        setEntityInfo(res.data);
+      }).catch(() => {
+        // If wisata not found, redirect back
+        navigate('/admin/attractions');
+      });
+    } else if (hotelId) {
+      setEntityType('hotel');
+      api.get(`/admin/hotels/${hotelId}`).then((res) => {
+        setEntityInfo(res.data);
+      }).catch(() => {
+        // If hotel not found, redirect back
+        navigate('/admin/hotels');
+      });
+    }
 
     // Load gallery data if editing
     if (isEdit) {
@@ -39,7 +52,7 @@ export default function FormGallery() {
         }
       });
     }
-  }, [id, isEdit, wisataId, navigate]);
+  }, [id, isEdit, wisataId, hotelId, navigate]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -99,7 +112,13 @@ export default function FormGallery() {
       } else {
         await api.post('/admin/galleries', submitData);
       }
-      navigate(`/admin/attractions/${wisataId}/galleries`);
+      
+      // Navigate back to gallery list
+      if (wisataId) {
+        navigate(`/admin/attractions/${wisataId}/galleries`);
+      } else if (hotelId) {
+        navigate(`/admin/hotels/${hotelId}/galleries`);
+      }
     } catch (error) {
       console.error('Error saving gallery:', error);
       alert('Terjadi kesalahan saat menyimpan gambar');
@@ -131,9 +150,9 @@ export default function FormGallery() {
             {isEdit ? 'Edit Gambar' : 'Tambah Gambar'}
           </h1>
         </div>
-        {wisataInfo && (
+        {entityInfo && (
           <p className="text-sm text-base-content/60">
-            {wisataInfo.nama_wisata}
+            {entityInfo.nama_wisata || entityInfo.nama_hotel}
           </p>
         )}
       </div>
@@ -202,14 +221,21 @@ export default function FormGallery() {
           />
         </div>
 
-        {/* Hidden field for id_wisata since it's determined by the route */}
+        {/* Hidden fields for entity ID since it's determined by the route */}
         <input type="hidden" name="id_wisata" value={formData.id_wisata} />
+        <input type="hidden" name="id_hotel" value={formData.id_hotel} />
 
         <div className="flex space-x-3 pt-4">
           <Button
             type="button"
             variant="ghost"
-            onClick={() => navigate(`/admin/attractions/${wisataId}/galleries`)}
+            onClick={() => {
+              if (wisataId) {
+                navigate(`/admin/attractions/${wisataId}/galleries`);
+              } else if (hotelId) {
+                navigate(`/admin/hotels/${hotelId}/galleries`);
+              }
+            }}
             disabled={loading}
           >
             Batal

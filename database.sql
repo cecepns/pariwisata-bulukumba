@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS admin (
     password VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabel Kategori (master kategori wisata)
+-- Tabel Kategori (master kategori wisata dan hotel)
 CREATE TABLE IF NOT EXISTS kategori (
     id_kategori INT AUTO_INCREMENT PRIMARY KEY,
     nama_kategori VARCHAR(150) NOT NULL,
@@ -42,6 +42,31 @@ CREATE TABLE IF NOT EXISTS wisata (
         ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabel Hotel (detail hotel)
+-- Menyimpan informasi lengkap hotel termasuk rating dan jumlah review
+-- average_rating: rata-rata rating dari review yang approved (0.00 - 5.00)
+-- total_reviews: jumlah total review yang approved
+CREATE TABLE IF NOT EXISTS hotel (
+    id_hotel INT AUTO_INCREMENT PRIMARY KEY,
+    id_kategori INT NOT NULL,
+    nama_hotel VARCHAR(255) NOT NULL,
+    deskripsi TEXT,
+    harga_kamar VARCHAR(100),
+    alamat_hotel TEXT,
+    nomor_telepon VARCHAR(50),
+    website VARCHAR(255),
+    fasilitas TEXT,
+    peta_hotel TEXT,
+    keterangan TEXT,
+    average_rating DECIMAL(3,2) DEFAULT 0.00,
+    total_reviews INT DEFAULT 0,
+    KEY idx_hotel_id_kategori (id_kategori),
+    CONSTRAINT fk_hotel_kategori FOREIGN KEY (id_kategori)
+        REFERENCES kategori(id_kategori)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Tabel Event (jadwal acara/festival)
 CREATE TABLE IF NOT EXISTS `event` (
     id_event INT AUTO_INCREMENT PRIMARY KEY,
@@ -53,29 +78,43 @@ CREATE TABLE IF NOT EXISTS `event` (
     gambar_event VARCHAR(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabel Publikasi/Galeri (koleksi foto destinasi)
+-- Tabel Publikasi/Galeri (koleksi foto destinasi dan hotel)
+-- Dimodifikasi untuk mendukung galeri wisata dan hotel
 CREATE TABLE IF NOT EXISTS galeri (
     id_galeri INT AUTO_INCREMENT PRIMARY KEY,
-    id_wisata INT NOT NULL,
+    id_wisata INT NULL,
+    id_hotel INT NULL,
     gambar VARCHAR(255) NOT NULL,
     keterangan VARCHAR(255),
     nama VARCHAR(255),
     KEY idx_galeri_id_wisata (id_wisata),
+    KEY idx_galeri_id_hotel (id_hotel),
     CONSTRAINT fk_galeri_wisata FOREIGN KEY (id_wisata)
         REFERENCES wisata(id_wisata)
         ON UPDATE CASCADE
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT fk_galeri_hotel FOREIGN KEY (id_hotel)
+        REFERENCES hotel(id_hotel)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    -- Memastikan hanya salah satu yang terisi (wisata atau hotel)
+    CONSTRAINT chk_galeri_reference CHECK (
+        (id_wisata IS NOT NULL AND id_hotel IS NULL) OR 
+        (id_wisata IS NULL AND id_hotel IS NOT NULL)
+    )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabel Review (ulasan pengunjung)
--- Menyimpan ulasan dan rating dari pengunjung untuk setiap objek wisata
+-- Tabel Review (ulasan pengunjung untuk wisata dan hotel)
+-- Dimodifikasi untuk mendukung review wisata dan hotel
+-- Menyimpan ulasan dan rating dari pengunjung untuk setiap objek wisata/hotel
 -- Sistem moderasi: pending (menunggu), approved (disetujui), rejected (ditolak)
 -- Rating: 1.0 - 5.0 dengan increment 0.5
 -- Auto-approval: rating 3-5 tanpa kata spam
 -- Manual review: rating 1-2 atau mengandung kata spam
 CREATE TABLE IF NOT EXISTS review (
     id_review INT AUTO_INCREMENT PRIMARY KEY,
-    id_wisata INT NOT NULL,
+    id_wisata INT NULL,
+    id_hotel INT NULL,
     nama_reviewer VARCHAR(150) NOT NULL,
     email_reviewer VARCHAR(255),
     rating DECIMAL(2,1) NOT NULL,
@@ -83,12 +122,22 @@ CREATE TABLE IF NOT EXISTS review (
     status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     KEY idx_review_id_wisata (id_wisata),
+    KEY idx_review_id_hotel (id_hotel),
     KEY idx_review_status (status),
     KEY idx_review_created_at (created_at),
     CONSTRAINT fk_review_wisata FOREIGN KEY (id_wisata)
         REFERENCES wisata(id_wisata)
         ON UPDATE CASCADE
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT fk_review_hotel FOREIGN KEY (id_hotel)
+        REFERENCES hotel(id_hotel)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    -- Memastikan hanya salah satu yang terisi (wisata atau hotel)
+    CONSTRAINT chk_review_reference CHECK (
+        (id_wisata IS NOT NULL AND id_hotel IS NULL) OR 
+        (id_wisata IS NULL AND id_hotel IS NOT NULL)
+    )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- === DATA AWAL ===
@@ -99,6 +148,24 @@ INSERT IGNORE INTO admin (username, password) VALUES (
   'admin',
   '$2b$10$abcdefghijklmnopqrstuv'
 );
+
+-- Data awal kategori wisata dan hotel
+INSERT IGNORE INTO kategori (nama_kategori, deskripsi) VALUES
+-- Kategori Wisata
+('Pantai', 'Destinasi wisata pantai dan laut'),
+('Gunung', 'Destinasi wisata pegunungan dan hiking'),
+('Taman', 'Taman rekreasi dan hiburan'),
+('Museum', 'Museum dan tempat bersejarah'),
+('Kuliner', 'Tempat makan dan kuliner lokal'),
+-- Kategori Hotel
+('Hotel Bintang 5', 'Hotel mewah dengan fasilitas lengkap'),
+('Hotel Bintang 4', 'Hotel menengah ke atas dengan fasilitas baik'),
+('Hotel Bintang 3', 'Hotel menengah dengan fasilitas standar'),
+('Hotel Bintang 2', 'Hotel ekonomis dengan fasilitas dasar'),
+('Hotel Bintang 1', 'Hotel budget dengan fasilitas minimal'),
+('Penginapan', 'Penginapan sederhana dan homestay'),
+('Resort', 'Resort dengan suasana alam'),
+('Villa', 'Villa pribadi untuk keluarga atau grup');
 
 
 

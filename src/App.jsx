@@ -5,6 +5,8 @@ import AdminLayout from './layouts/AdminLayout.jsx';
 import HomePage from './pages/HomePage.jsx';
 import AttractionsPage from './pages/AttractionsPage.jsx';
 import AttractionDetailPage from './pages/AttractionDetailPage.jsx';
+import HotelsPage from './pages/HotelsPage.jsx';
+import HotelDetailPage from './pages/HotelDetailPage.jsx';
 import EventsPage from './pages/EventsPage.jsx';
 import EventDetailPage from './pages/EventDetailPage.jsx';
 import GalleryPage from './pages/GalleryPage.jsx';
@@ -12,6 +14,8 @@ import AdminLoginPage from './pages/AdminLoginPage.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import ManageAttractions from './pages/admin/ManageAttractions.jsx';
 import FormAttraction from './pages/admin/FormAttraction.jsx';
+import ManageHotels from './pages/admin/ManageHotels.jsx';
+import FormHotel from './pages/admin/FormHotel.jsx';
 import ManageGallery from './pages/admin/ManageGallery.jsx';
 import FormGallery from './pages/admin/FormGallery.jsx';
 import ManageCategories from './pages/admin/ManageCategories.jsx';
@@ -31,6 +35,8 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/attractions" element={<AttractionsPage />} />
         <Route path="/attractions/:id" element={<AttractionDetailPage />} />
+        <Route path="/hotels" element={<HotelsPage />} />
+        <Route path="/hotels/:id" element={<HotelDetailPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/events/:id" element={<EventDetailPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
@@ -45,6 +51,12 @@ export default function App() {
         <Route path="/admin/attractions/:wisataId/galleries" element={<ManageGallery />} />
         <Route path="/admin/attractions/:wisataId/galleries/new" element={<FormGallery />} />
         <Route path="/admin/attractions/:wisataId/galleries/:id/edit" element={<FormGallery />} />
+        <Route path="/admin/hotels" element={<ManageHotels />} />
+        <Route path="/admin/hotels/new" element={<FormHotel />} />
+        <Route path="/admin/hotels/:id/edit" element={<FormHotel />} />
+        <Route path="/admin/hotels/:hotelId/galleries" element={<ManageGallery />} />
+        <Route path="/admin/hotels/:hotelId/galleries/new" element={<FormGallery />} />
+        <Route path="/admin/hotels/:hotelId/galleries/:id/edit" element={<FormGallery />} />
         <Route path="/admin/categories" element={<ManageCategories />} />
         <Route path="/admin/categories/new" element={<FormCategory />} />
         <Route path="/admin/categories/:id/edit" element={<FormCategory />} />

@@ -2,20 +2,24 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api.js';
 import AttractionCard from '../components/AttractionCard.jsx';
+import HotelCard from '../components/HotelCard.jsx';
 import EventCard from '../components/EventCard.jsx';
 import heroImage from '../assets/bg.jpg';
 
 export default function HomePage() {
   const [attractions, setAttractions] = useState([]);
+  const [hotels, setHotels] = useState([]);
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
     Promise.all([
       api.get('/attractions'),
+      api.get('/hotels'),
       api.get('/events'),
-    ]).then(([aRes, eRes]) => {
+    ]).then(([aRes, hRes, eRes]) => {
       console.log(aRes.data);
       setAttractions(aRes.data.slice(0, 6));
+      setHotels(hRes.data.slice(0, 6));
       setEvents(eRes.data.slice(0, 3));
     }).catch(() => {});
   }, []);
@@ -46,6 +50,12 @@ export default function HomePage() {
                 className="btn btn-primary btn-lg text-white px-6 md:px-8 py-3 rounded-full hover:scale-105 transition-transform text-sm md:text-base"
               >
                 Jelajahi Destinasi
+              </Link>
+              <Link 
+                to="/hotels" 
+                className="btn btn-outline btn-lg text-white border-white hover:bg-white hover:text-black px-6 md:px-8 py-3 rounded-full hover:scale-105 transition-transform text-sm md:text-base"
+              >
+                Cari Hotel
               </Link>
               <Link 
                 to="/events" 
@@ -87,6 +97,34 @@ export default function HomePage() {
               <p className="text-sm md:text-base text-gray-500 mb-4">Saat ini belum ada destinasi wisata yang tersedia. Silakan cek kembali nanti.</p>
               <Link to="/attractions" className="btn btn-primary text-sm md:text-base">
                 Lihat Semua Destinasi
+              </Link>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Hotel & Penginapan Section */}
+      <section>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6 md:mb-8">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold">Hotel & Penginapan</h2>
+          <Link to="/hotels" className="link link-primary text-sm md:text-base">Lihat semua</Link>
+        </div>
+        {hotels?.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {hotels?.map((h) => (
+              <HotelCard key={h.id_hotel} hotel={h} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 md:py-12">
+            <div className="max-w-md mx-auto px-4">
+              <svg className="w-12 h-12 md:w-16 md:h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">Belum Ada Hotel</h3>
+              <p className="text-sm md:text-base text-gray-500 mb-4">Saat ini belum ada hotel yang tersedia. Silakan cek kembali nanti.</p>
+              <Link to="/hotels" className="btn btn-primary text-sm md:text-base">
+                Lihat Semua Hotel
               </Link>
             </div>
           </div>

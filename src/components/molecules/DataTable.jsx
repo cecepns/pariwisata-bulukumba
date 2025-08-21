@@ -76,7 +76,7 @@ const DataTable = ({
         <tbody>
           {data.length === 0 ? (
             <tr>
-                              <td 
+              <td 
                 colSpan={columns.length + ((onEdit || onDelete || onView || actions.length > 0) ? 1 : 0)} 
                 className="text-center py-6 text-base-content/60"
               >
