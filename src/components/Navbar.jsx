@@ -29,6 +29,7 @@ export default function Navbar() {
             <li><NavLink to="/" className={linkClass}>Beranda</NavLink></li>
             <li><NavLink to="/attractions" className={linkClass}>Wisata</NavLink></li>
             <li><NavLink to="/hotels" className={linkClass}>Hotel</NavLink></li>
+            <li><NavLink to="/restorans" className={linkClass}>Restoran</NavLink></li>
             <li><NavLink to="/events" className={linkClass}>Event</NavLink></li>
             <li><NavLink to="/gallery" className={linkClass}>Galeri</NavLink></li>
           </ul>
@@ -98,6 +99,15 @@ export default function Navbar() {
                 onClick={closeMenu}
               >
                 Hotel
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/restorans" 
+                className={linkClass}
+                onClick={closeMenu}
+              >
+                Restoran
               </NavLink>
             </li>
             <li>

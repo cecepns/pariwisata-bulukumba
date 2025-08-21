@@ -6,7 +6,7 @@ import { getImageUrl } from '../../utils/imageUrl.js';
 
 export default function FormGallery() {
   const navigate = useNavigate();
-  const { id, wisataId, hotelId } = useParams();
+  const { id, wisataId, hotelId, restoranId } = useParams();
   const isEdit = !!id;
   
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,8 @@ export default function FormGallery() {
     keterangan: '',
     nama: '',
     id_wisata: wisataId || null,
-    id_hotel: hotelId || null
+    id_hotel: hotelId || null,
+    id_restoran: restoranId || null
   });
 
   useEffect(() => {
@@ -40,6 +41,14 @@ export default function FormGallery() {
         // If hotel not found, redirect back
         navigate('/admin/hotels');
       });
+    } else if (restoranId) {
+      setEntityType('restoran');
+      api.get(`/admin/restorans/${restoranId}`).then((res) => {
+        setEntityInfo(res.data);
+      }).catch(() => {
+        // If restoran not found, redirect back
+        navigate('/admin/restorans');
+      });
     }
 
     // Load gallery data if editing
@@ -52,7 +61,7 @@ export default function FormGallery() {
         }
       });
     }
-  }, [id, isEdit, wisataId, hotelId, navigate]);
+  }, [id, isEdit, wisataId, hotelId, restoranId, navigate]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -118,6 +127,8 @@ export default function FormGallery() {
         navigate(`/admin/attractions/${wisataId}/galleries`);
       } else if (hotelId) {
         navigate(`/admin/hotels/${hotelId}/galleries`);
+      } else if (restoranId) {
+        navigate(`/admin/restorans/${restoranId}/galleries`);
       }
     } catch (error) {
       console.error('Error saving gallery:', error);
@@ -142,7 +153,11 @@ export default function FormGallery() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => navigate(`/admin/attractions/${wisataId}/galleries`)}
+            onClick={() => navigate(
+              wisataId ? `/admin/attractions/${wisataId}/galleries` :
+              hotelId ? `/admin/hotels/${hotelId}/galleries` :
+              `/admin/restorans/${restoranId}/galleries`
+            )}
           >
             ← Kembali
           </Button>
@@ -152,7 +167,7 @@ export default function FormGallery() {
         </div>
         {entityInfo && (
           <p className="text-sm text-base-content/60">
-            {entityInfo.nama_wisata || entityInfo.nama_hotel}
+            {entityInfo.nama_wisata || entityInfo.nama_hotel || entityInfo.nama_restoran}
           </p>
         )}
       </div>

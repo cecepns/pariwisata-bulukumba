@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import api from '../services/api';
 import RatingStars from './RatingStars';
 
-const ReviewForm = ({ wisataId, hotelId, onReviewSubmitted }) => {
+const ReviewForm = ({ entityType, entityId, wisataId, hotelId, restoranId, onReviewSubmitted }) => {
   const [formData, setFormData] = useState({
     nama_reviewer: '',
     email_reviewer: '',
@@ -40,10 +40,24 @@ const ReviewForm = ({ wisataId, hotelId, onReviewSubmitted }) => {
         ...formData
       };
       
-      if (wisataId) {
-        payload.id_wisata = wisataId;
-      } else if (hotelId) {
-        payload.id_hotel = hotelId;
+      // Support new entityType/entityId pattern
+      if (entityType && entityId) {
+        if (entityType === 'wisata') {
+          payload.id_wisata = entityId;
+        } else if (entityType === 'hotel') {
+          payload.id_hotel = entityId;
+        } else if (entityType === 'restoran') {
+          payload.id_restoran = entityId;
+        }
+      } else {
+        // Support legacy direct props
+        if (wisataId) {
+          payload.id_wisata = wisataId;
+        } else if (hotelId) {
+          payload.id_hotel = hotelId;
+        } else if (restoranId) {
+          payload.id_restoran = restoranId;
+        }
       }
       
       const response = await api.post('/reviews', payload);

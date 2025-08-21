@@ -123,14 +123,15 @@ function validateReviewInput(reviewData) {
     errors.push('Komentar maksimal 1000 karakter');
   }
   
-  // Entity validation: harus ada id_wisata atau id_hotel
-  if (!reviewData.id_wisata && !reviewData.id_hotel) {
-    errors.push('ID wisata atau hotel harus disediakan');
+  // Entity validation: harus ada id_wisata, id_hotel, atau id_restoran
+  if (!reviewData.id_wisata && !reviewData.id_hotel && !reviewData.id_restoran) {
+    errors.push('ID wisata, hotel, atau restoran harus disediakan');
   }
   
-  // Entity validation: tidak boleh ada keduanya
-  if (reviewData.id_wisata && reviewData.id_hotel) {
-    errors.push('Review hanya bisa untuk wisata atau hotel, tidak keduanya');
+  // Entity validation: hanya boleh ada satu
+  const entityCount = [reviewData.id_wisata, reviewData.id_hotel, reviewData.id_restoran].filter(Boolean).length;
+  if (entityCount > 1) {
+    errors.push('Review hanya bisa untuk wisata, hotel, atau restoran, tidak ketiganya sekaligus');
   }
   
   return errors;
@@ -212,12 +213,39 @@ async function updateHotelRating(id_hotel) {
   }
 }
 
+// Update restoran rating statistics
+async function updateRestoranRating(id_restoran) {
+  try {
+    const stats = await query(`
+      SELECT 
+        COUNT(*) as total_reviews,
+        AVG(rating) as average_rating
+      FROM review 
+      WHERE id_restoran = ? AND status = 'approved'
+    `, [id_restoran]);
+    
+    const totalReviews = stats[0].total_reviews || 0;
+    const averageRating = parseFloat(stats[0].average_rating || 0).toFixed(2);
+    
+    await query(`
+      UPDATE restoran 
+      SET average_rating = ?, total_reviews = ?
+      WHERE id_restoran = ?
+    `, [averageRating, totalReviews, id_restoran]);
+    
+    return { total_reviews: totalReviews, average_rating: averageRating };
+  } catch (error) {
+    console.error('Error updating restoran rating:', error);
+    throw error;
+  }
+}
+
 // ===== CONTROLLERS =====
 
 // Review Controllers
 async function createReview(req, res) {
   try {
-    const { id_wisata, id_hotel, nama_reviewer, email_reviewer, rating, komentar } = req.body;
+    const { id_wisata, id_hotel, id_restoran, nama_reviewer, email_reviewer, rating, komentar } = req.body;
     
     // Validasi input
     const validationErrors = validateReviewInput(req.body);
@@ -228,7 +256,7 @@ async function createReview(req, res) {
       });
     }
     
-    // Cek apakah wisata atau hotel exists
+    // Cek apakah wisata, hotel, atau restoran exists
     let entityType = '';
     let entityId = null;
     
@@ -246,8 +274,15 @@ async function createReview(req, res) {
       }
       entityType = 'hotel';
       entityId = id_hotel;
+    } else if (id_restoran) {
+      const restoran = await query('SELECT id_restoran FROM restoran WHERE id_restoran = ?', [id_restoran]);
+      if (!restoran || restoran.length === 0) {
+        return res.status(404).json({ message: 'Restoran tidak ditemukan' });
+      }
+      entityType = 'restoran';
+      entityId = id_restoran;
     } else {
-      return res.status(400).json({ message: 'ID wisata atau hotel harus disediakan' });
+      return res.status(400).json({ message: 'ID wisata, hotel, atau restoran harus disediakan' });
     }
     
     // Determine review status
@@ -255,11 +290,12 @@ async function createReview(req, res) {
     
     // Save review ke database
     const result = await query(`
-      INSERT INTO review (id_wisata, id_hotel, nama_reviewer, email_reviewer, rating, komentar, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO review (id_wisata, id_hotel, id_restoran, nama_reviewer, email_reviewer, rating, komentar, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       id_wisata || null,
       id_hotel || null,
+      id_restoran || null,
       nama_reviewer.trim(),
       email_reviewer ? email_reviewer.trim() : null,
       rating,
@@ -273,6 +309,8 @@ async function createReview(req, res) {
         await updateWisataRating(entityId);
       } else if (entityType === 'hotel') {
         await updateHotelRating(entityId);
+      } else if (entityType === 'restoran') {
+        await updateRestoranRating(entityId);
       }
     }
     
@@ -372,6 +410,47 @@ async function getReviewsByHotel(req, res) {
   }
 }
 
+async function getReviewsByRestoran(req, res) {
+  try {
+    const { id_restoran } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    
+    // Get reviews
+    const reviews = await query(`
+      SELECT id_review, nama_reviewer, rating, komentar, created_at
+      FROM review 
+      WHERE id_restoran = ? AND status = 'approved'
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `, [id_restoran, limit, offset]);
+    
+    // Get total count
+    const totalResult = await query(`
+      SELECT COUNT(*) as total
+      FROM review 
+      WHERE id_restoran = ? AND status = 'approved'
+    `, [id_restoran]);
+    
+    const total = totalResult[0].total;
+    
+    res.json({
+      data: reviews,
+      pagination: {
+        page: page,
+        limit: limit,
+        total: total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error getting restoran reviews:', error);
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+}
+
 async function getAllReviews(req, res) {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -393,21 +472,25 @@ async function getAllReviews(req, res) {
         whereClause += ' AND r.id_wisata IS NOT NULL';
       } else if (type === 'hotel') {
         whereClause += ' AND r.id_hotel IS NOT NULL';
+      } else if (type === 'restoran') {
+        whereClause += ' AND r.id_restoran IS NOT NULL';
       }
     }
     
-    // Get reviews with wisata and hotel info
+    // Get reviews with wisata, hotel, and restoran info
     const reviews = await query(`
       SELECT r.id_review, r.nama_reviewer, r.email_reviewer, r.rating, r.komentar, 
              r.status, r.created_at, 
-             w.nama_wisata, h.nama_hotel,
+             w.nama_wisata, h.nama_hotel, rs.nama_restoran,
              CASE 
                WHEN r.id_wisata IS NOT NULL THEN 'wisata'
                WHEN r.id_hotel IS NOT NULL THEN 'hotel'
+               WHEN r.id_restoran IS NOT NULL THEN 'restoran'
              END as review_type
       FROM review r
       LEFT JOIN wisata w ON r.id_wisata = w.id_wisata
       LEFT JOIN hotel h ON r.id_hotel = h.id_hotel
+      LEFT JOIN restoran rs ON r.id_restoran = rs.id_restoran
       WHERE ${whereClause}
       ORDER BY r.created_at DESC
       LIMIT ? OFFSET ?
@@ -449,7 +532,7 @@ async function updateReviewStatus(req, res) {
     }
     
     // Get review info
-    const review = await query('SELECT id_wisata, id_hotel FROM review WHERE id_review = ?', [id_review]);
+    const review = await query('SELECT id_wisata, id_hotel, id_restoran FROM review WHERE id_review = ?', [id_review]);
     if (!review || review.length === 0) {
       return res.status(404).json({ message: 'Review tidak ditemukan' });
     }
@@ -463,6 +546,8 @@ async function updateReviewStatus(req, res) {
         await updateWisataRating(review[0].id_wisata);
       } else if (review[0].id_hotel) {
         await updateHotelRating(review[0].id_hotel);
+      } else if (review[0].id_restoran) {
+        await updateRestoranRating(review[0].id_restoran);
       }
     }
     
@@ -978,6 +1063,220 @@ async function deleteHotel(req, res) {
   }
 }
 
+// Restoran Controllers
+async function getAllRestorans(req, res) {
+  try {
+    const rows = await query(
+      `SELECT
+         r.id_restoran,
+         r.id_kategori,
+         k.nama_kategori,
+         r.nama_restoran,
+         r.deskripsi,
+         r.harga_rata_rata,
+         r.jam_operasional,
+         r.alamat_restoran,
+         r.nomor_telepon,
+         r.website,
+         r.menu_unggulan,
+         r.peta_restoran,
+         r.keterangan,
+         r.average_rating,
+         r.total_reviews,
+         (SELECT gg.gambar FROM galeri gg WHERE gg.id_restoran = r.id_restoran ORDER BY gg.id_galeri ASC LIMIT 1) AS cover_image_url
+       FROM restoran r
+       LEFT JOIN kategori k ON k.id_kategori = r.id_kategori
+       ORDER BY r.id_restoran DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('getAllRestorans error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+async function getRestoranById(req, res) {
+  try {
+    const { id } = req.params;
+    const rows = await query(
+      `SELECT
+         r.id_restoran,
+         r.id_kategori,
+         k.nama_kategori,
+         r.nama_restoran,
+         r.deskripsi,
+         r.harga_rata_rata,
+         r.jam_operasional,
+         r.alamat_restoran,
+         r.nomor_telepon,
+         r.website,
+         r.menu_unggulan,
+         r.peta_restoran,
+         r.keterangan,
+         r.average_rating,
+         r.total_reviews
+       FROM restoran r
+       LEFT JOIN kategori k ON k.id_kategori = r.id_kategori
+       WHERE r.id_restoran = ?`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Restoran not found' });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('getRestoranById error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+async function createRestoran(req, res) {
+  try {
+    const {
+      category_id,
+      name,
+      description,
+      average_price,
+      operational_hours,
+      address,
+      phone,
+      website,
+      featured_menu,
+      gmaps_iframe_url,
+      keterangan,
+    } = req.body || {};
+
+    if (!name) return res.status(400).json({ message: 'Name is required' });
+
+    const result = await query(
+      `INSERT INTO restoran
+        (id_kategori, nama_restoran, deskripsi, harga_rata_rata, jam_operasional, alamat_restoran, nomor_telepon, website, menu_unggulan, peta_restoran, keterangan)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        category_id || null,
+        name,
+        description || null,
+        average_price || null,
+        operational_hours || null,
+        address || null,
+        phone || null,
+        website || null,
+        featured_menu || null,
+        gmaps_iframe_url || null,
+        keterangan || null,
+      ]
+    );
+
+    const newId = result.insertId;
+    res.status(201).json({ id_restoran: newId });
+  } catch (err) {
+    console.error('createRestoran error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+async function updateRestoran(req, res) {
+  try {
+    const { id } = req.params;
+    const {
+      category_id,
+      name,
+      description,
+      average_price,
+      operational_hours,
+      address,
+      phone,
+      website,
+      featured_menu,
+      gmaps_iframe_url,
+      keterangan,
+    } = req.body || {};
+
+    if (!name) return res.status(400).json({ message: 'Name is required' });
+
+    // Check if restoran exists
+    const existingRows = await query('SELECT id_restoran FROM restoran WHERE id_restoran = ?', [id]);
+    if (existingRows.length === 0) {
+      return res.status(404).json({ message: 'Restoran not found' });
+    }
+
+    // Update restoran
+    const updateFields = [];
+    const updateValues = [];
+
+    if (category_id !== undefined) {
+      updateFields.push('id_kategori = ?');
+      updateValues.push(category_id || null);
+    }
+    if (name !== undefined) {
+      updateFields.push('nama_restoran = ?');
+      updateValues.push(name);
+    }
+    if (description !== undefined) {
+      updateFields.push('deskripsi = ?');
+      updateValues.push(description || null);
+    }
+    if (average_price !== undefined) {
+      updateFields.push('harga_rata_rata = ?');
+      updateValues.push(average_price || null);
+    }
+    if (operational_hours !== undefined) {
+      updateFields.push('jam_operasional = ?');
+      updateValues.push(operational_hours || null);
+    }
+    if (address !== undefined) {
+      updateFields.push('alamat_restoran = ?');
+      updateValues.push(address || null);
+    }
+    if (phone !== undefined) {
+      updateFields.push('nomor_telepon = ?');
+      updateValues.push(phone || null);
+    }
+    if (website !== undefined) {
+      updateFields.push('website = ?');
+      updateValues.push(website || null);
+    }
+    if (featured_menu !== undefined) {
+      updateFields.push('menu_unggulan = ?');
+      updateValues.push(featured_menu || null);
+    }
+    if (gmaps_iframe_url !== undefined) {
+      updateFields.push('peta_restoran = ?');
+      updateValues.push(gmaps_iframe_url || null);
+    }
+    if (keterangan !== undefined) {
+      updateFields.push('keterangan = ?');
+      updateValues.push(keterangan || null);
+    }
+
+    if (updateFields.length > 0) {
+      updateValues.push(id);
+      await query(
+        `UPDATE restoran SET ${updateFields.join(', ')} WHERE id_restoran = ?`,
+        updateValues
+      );
+    }
+
+    res.json({ message: 'Updated' });
+  } catch (err) {
+    console.error('updateRestoran error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+async function deleteRestoran(req, res) {
+  try {
+    const { id } = req.params;
+    await query('DELETE FROM restoran WHERE id_restoran = ?', [id]);
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    console.error('deleteRestoran error', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
 // Gallery Controllers
 async function getAllGalleries(req, res) {
   try {
@@ -986,14 +1285,17 @@ async function getAllGalleries(req, res) {
          g.id_galeri,
          g.id_wisata,
          g.id_hotel,
+         g.id_restoran,
          g.gambar,
          g.keterangan,
          g.nama,
          w.nama_wisata,
-         h.nama_hotel
+         h.nama_hotel,
+         r.nama_restoran
        FROM galeri g
        LEFT JOIN wisata w ON g.id_wisata = w.id_wisata
        LEFT JOIN hotel h ON g.id_hotel = h.id_hotel
+       LEFT JOIN restoran r ON g.id_restoran = r.id_restoran
        ORDER BY g.id_galeri DESC`
     );
     res.json(rows);
@@ -1032,12 +1334,12 @@ async function getGalleryById(req, res) {
 
 async function createGallery(req, res) {
   try {
-    const { id_wisata, id_hotel, gambar, keterangan, nama } = req.body || {};
-    if (!id_wisata && !id_hotel) return res.status(400).json({ message: 'id_wisata or id_hotel is required' });
+    const { id_wisata, id_hotel, id_restoran, gambar, keterangan, nama } = req.body || {};
+    if (!id_wisata && !id_hotel && !id_restoran) return res.status(400).json({ message: 'id_wisata, id_hotel, or id_restoran is required' });
     if (!gambar) return res.status(400).json({ message: 'gambar is required' });
     const result = await query(
-      `INSERT INTO galeri (id_wisata, id_hotel, gambar, keterangan, nama) VALUES (?, ?, ?, ?, ?)`,
-      [id_wisata || null, id_hotel || null, gambar, keterangan || null, nama || null]
+      `INSERT INTO galeri (id_wisata, id_hotel, id_restoran, gambar, keterangan, nama) VALUES (?, ?, ?, ?, ?, ?)`,
+      [id_wisata || null, id_hotel || null, id_restoran || null, gambar, keterangan || null, nama || null]
     );
     res.status(201).json({ id_galeri: result.insertId });
   } catch (err) {
@@ -1049,7 +1351,7 @@ async function createGallery(req, res) {
 async function updateGallery(req, res) {
   try {
     const { id } = req.params;
-    const { id_wisata, id_hotel, gambar, keterangan, nama } = req.body;
+    const { id_wisata, id_hotel, id_restoran, gambar, keterangan, nama } = req.body;
     
     // If updating image, get the old image path to delete it later
     let oldImagePath = null;
@@ -1070,6 +1372,10 @@ async function updateGallery(req, res) {
     if (id_hotel !== undefined) {
       updates.push('id_hotel = ?');
       params.push(id_hotel);
+    }
+    if (id_restoran !== undefined) {
+      updates.push('id_restoran = ?');
+      params.push(id_restoran);
     }
     if (gambar !== undefined) {
       updates.push('gambar = ?');
@@ -1353,6 +1659,9 @@ router.get('/attractions/:id', getAttractionById);
 router.get('/hotels', getAllHotels);
 router.get('/hotels/:id', getHotelById);
 
+router.get('/restorans', getAllRestorans);
+router.get('/restorans/:id', getRestoranById);
+
 router.get('/events', getAllEvents);
 router.get('/events/:id', getEventById);
 
@@ -1366,6 +1675,7 @@ router.get('/categories/:id', getCategoryById);
 router.post('/reviews', createReview);
 router.get('/reviews/wisata/:id_wisata', getReviewsByWisata);
 router.get('/reviews/hotel/:id_hotel', getReviewsByHotel);
+router.get('/reviews/restoran/:id_restoran', getReviewsByRestoran);
 
 // Admin login (public)
 router.post('/admin/login', login);
@@ -1387,6 +1697,13 @@ adminRouter.get('/hotels/:id', getHotelById);
 adminRouter.post('/hotels', createHotel);
 adminRouter.put('/hotels/:id', updateHotel);
 adminRouter.delete('/hotels/:id', deleteHotel);
+
+// Admin restorans
+adminRouter.get('/restorans', getAllRestorans);
+adminRouter.get('/restorans/:id', getRestoranById);
+adminRouter.post('/restorans', createRestoran);
+adminRouter.put('/restorans/:id', updateRestoran);
+adminRouter.delete('/restorans/:id', deleteRestoran);
 
 // Admin events
 adminRouter.get('/events', getAllEvents);
@@ -1547,6 +1864,29 @@ async function initializeDatabase() {
       )
     `);
 
+    // Create restoran table
+    await query(`
+      CREATE TABLE IF NOT EXISTS restoran (
+        id_restoran INT AUTO_INCREMENT PRIMARY KEY,
+        id_kategori INT,
+        nama_restoran VARCHAR(200) NOT NULL,
+        deskripsi TEXT,
+        harga_rata_rata VARCHAR(100),
+        jam_operasional VARCHAR(100),
+        alamat_restoran TEXT,
+        nomor_telepon VARCHAR(20),
+        website VARCHAR(255),
+        menu_unggulan TEXT,
+        peta_restoran TEXT,
+        keterangan TEXT,
+        average_rating DECIMAL(3,2) DEFAULT 0.00,
+        total_reviews INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_kategori) REFERENCES kategori(id_kategori) ON DELETE SET NULL
+      )
+    `);
+
     // Create event table
     await query(`
       CREATE TABLE IF NOT EXISTS \`event\` (
@@ -1568,6 +1908,7 @@ async function initializeDatabase() {
         id_galeri INT AUTO_INCREMENT PRIMARY KEY,
         id_wisata INT NULL,
         id_hotel INT NULL,
+        id_restoran INT NULL,
         gambar VARCHAR(500) NOT NULL,
         keterangan TEXT,
         nama VARCHAR(200),
@@ -1575,10 +1916,12 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (id_wisata) REFERENCES wisata(id_wisata) ON DELETE CASCADE,
         FOREIGN KEY (id_hotel) REFERENCES hotel(id_hotel) ON DELETE CASCADE,
-        -- Memastikan hanya salah satu yang terisi (wisata atau hotel)
+        FOREIGN KEY (id_restoran) REFERENCES restoran(id_restoran) ON DELETE CASCADE,
+        -- Memastikan hanya salah satu yang terisi (wisata, hotel, atau restoran)
         CONSTRAINT chk_galeri_reference CHECK (
-            (id_wisata IS NOT NULL AND id_hotel IS NULL) OR 
-            (id_wisata IS NULL AND id_hotel IS NOT NULL)
+            (id_wisata IS NOT NULL AND id_hotel IS NULL AND id_restoran IS NULL) OR 
+            (id_wisata IS NULL AND id_hotel IS NOT NULL AND id_restoran IS NULL) OR
+            (id_wisata IS NULL AND id_hotel IS NULL AND id_restoran IS NOT NULL)
         )
       )
     `);
@@ -1591,6 +1934,7 @@ async function initializeDatabase() {
         id_review INT AUTO_INCREMENT PRIMARY KEY,
         id_wisata INT NULL,
         id_hotel INT NULL,
+        id_restoran INT NULL,
         nama_reviewer VARCHAR(150) NOT NULL,
         email_reviewer VARCHAR(255),
         rating DECIMAL(2,1) NOT NULL,
@@ -1599,6 +1943,7 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         KEY idx_review_id_wisata (id_wisata),
         KEY idx_review_id_hotel (id_hotel),
+        KEY idx_review_id_restoran (id_restoran),
         KEY idx_review_status (status),
         KEY idx_review_created_at (created_at),
         CONSTRAINT fk_review_wisata FOREIGN KEY (id_wisata)
@@ -1609,10 +1954,15 @@ async function initializeDatabase() {
             REFERENCES hotel(id_hotel)
             ON UPDATE CASCADE
             ON DELETE CASCADE,
-        -- Memastikan hanya salah satu yang terisi (wisata atau hotel)
+        CONSTRAINT fk_review_restoran FOREIGN KEY (id_restoran)
+            REFERENCES restoran(id_restoran)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE,
+        -- Memastikan hanya salah satu yang terisi (wisata, hotel, atau restoran)
         CONSTRAINT chk_review_reference CHECK (
-            (id_wisata IS NOT NULL AND id_hotel IS NULL) OR 
-            (id_wisata IS NULL AND id_hotel IS NOT NULL)
+            (id_wisata IS NOT NULL AND id_hotel IS NULL AND id_restoran IS NULL) OR 
+            (id_wisata IS NULL AND id_hotel IS NOT NULL AND id_restoran IS NULL) OR
+            (id_wisata IS NULL AND id_hotel IS NULL AND id_restoran IS NOT NULL)
         )
       )
     `);

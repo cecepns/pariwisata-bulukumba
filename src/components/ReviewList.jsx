@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import RatingStars from './RatingStars';
 
-const ReviewList = ({ wisataId, hotelId }) => {
+const ReviewList = ({ entityType, entityId, wisataId, hotelId, restoranId, refreshTrigger }) => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
@@ -12,11 +12,28 @@ const ReviewList = ({ wisataId, hotelId }) => {
     try {
       setLoading(true);
       let endpoint = '';
-      if (wisataId) {
-        endpoint = `/reviews/wisata/${wisataId}`;
-      } else if (hotelId) {
-        endpoint = `/reviews/hotel/${hotelId}`;
+      
+      // Support new entityType/entityId pattern
+      if (entityType && entityId) {
+        if (entityType === 'wisata') {
+          endpoint = `/reviews/wisata/${entityId}`;
+        } else if (entityType === 'hotel') {
+          endpoint = `/reviews/hotel/${entityId}`;
+        } else if (entityType === 'restoran') {
+          endpoint = `/reviews/restoran/${entityId}`;
+        }
+      } else {
+        // Support legacy direct props
+        if (wisataId) {
+          endpoint = `/reviews/wisata/${wisataId}`;
+        } else if (hotelId) {
+          endpoint = `/reviews/hotel/${hotelId}`;
+        } else if (restoranId) {
+          endpoint = `/reviews/restoran/${restoranId}`;
+        }
       }
+      
+      if (!endpoint) return;
       
       const response = await api.get(`${endpoint}?page=${page}&limit=10`);
       setReviews(response.data.data);
@@ -30,7 +47,7 @@ const ReviewList = ({ wisataId, hotelId }) => {
 
   useEffect(() => {
     loadReviews();
-  }, [wisataId, hotelId]);
+  }, [entityType, entityId, wisataId, hotelId, restoranId, refreshTrigger]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
