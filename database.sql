@@ -149,23 +149,5 @@ INSERT IGNORE INTO admin (username, password) VALUES (
   '$2b$10$abcdefghijklmnopqrstuv'
 );
 
--- Data awal kategori wisata dan hotel
-INSERT IGNORE INTO kategori (nama_kategori, deskripsi) VALUES
--- Kategori Wisata
-('Pantai', 'Destinasi wisata pantai dan laut'),
-('Gunung', 'Destinasi wisata pegunungan dan hiking'),
-('Taman', 'Taman rekreasi dan hiburan'),
-('Museum', 'Museum dan tempat bersejarah'),
-('Kuliner', 'Tempat makan dan kuliner lokal'),
--- Kategori Hotel
-('Hotel Bintang 5', 'Hotel mewah dengan fasilitas lengkap'),
-('Hotel Bintang 4', 'Hotel menengah ke atas dengan fasilitas baik'),
-('Hotel Bintang 3', 'Hotel menengah dengan fasilitas standar'),
-('Hotel Bintang 2', 'Hotel ekonomis dengan fasilitas dasar'),
-('Hotel Bintang 1', 'Hotel budget dengan fasilitas minimal'),
-('Penginapan', 'Penginapan sederhana dan homestay'),
-('Resort', 'Resort dengan suasana alam'),
-('Villa', 'Villa pribadi untuk keluarga atau grup');
-
 
 
