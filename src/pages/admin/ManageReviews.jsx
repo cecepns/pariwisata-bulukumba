@@ -89,7 +89,8 @@ const ManageReviews = () => {
   const getTypeBadge = (type) => {
     const typeConfig = {
       wisata: { color: 'badge-info', text: 'Wisata' },
-      hotel: { color: 'badge-primary', text: 'Hotel' }
+      hotel: { color: 'badge-primary', text: 'Hotel' },
+      restoran: { color: 'badge-accent', text: 'Restoran' }
     };
     
     const config = typeConfig[type] || typeConfig.wisata;
@@ -99,6 +100,8 @@ const ManageReviews = () => {
   const getEntityName = (review) => {
     if (review.review_type === 'hotel') {
       return review.nama_hotel || 'Hotel tidak ditemukan';
+    } else if (review.review_type === 'restoran') {
+      return review.nama_restoran || 'Restoran tidak ditemukan';
     } else {
       return review.nama_wisata || 'Wisata tidak ditemukan';
     }
@@ -119,6 +122,20 @@ const ManageReviews = () => {
         
         {/* Filters */}
         <div className="flex space-x-4">
+          <select
+            value={typeFilter}
+            onChange={(e) => {
+              setTypeFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="select select-bordered"
+          >
+            <option value="">Semua Jenis</option>
+            <option value="wisata">Wisata</option>
+            <option value="hotel">Hotel</option>
+            <option value="restoran">Restoran</option>
+          </select>
+          
           <select
             value={statusFilter}
             onChange={(e) => {
