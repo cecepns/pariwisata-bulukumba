@@ -1114,10 +1114,12 @@ async function getRestoranById(req, res) {
          r.peta_restoran,
          r.keterangan,
          r.average_rating,
-         r.total_reviews
+         r.total_reviews,
+         (SELECT gg.gambar FROM galeri gg WHERE gg.id_restoran = r.id_restoran ORDER BY gg.id_galeri ASC LIMIT 1) AS cover_image_url
        FROM restoran r
        LEFT JOIN kategori k ON k.id_kategori = r.id_kategori
-       WHERE r.id_restoran = ?`,
+       WHERE r.id_restoran = ?
+       LIMIT 1`,
       [id]
     );
 
