@@ -7,6 +7,8 @@ import { Navigate, Outlet, NavLink, useNavigate } from 'react-router-dom';
 const adminNavItems = [
   { to: '/admin', label: 'Dasbor' },
   { to: '/admin/attractions', label: 'Kelola Objek Wisata' },
+  { to: '/admin/hotels', label: 'Kelola Hotel' },
+  { to: '/admin/restorans', label: 'Kelola Restoran' },
   { to: '/admin/categories', label: 'Kelola Kategori' },
   { to: '/admin/events', label: 'Kelola Event' },
   { to: '/admin/reviews', label: 'Kelola Ulasan' },

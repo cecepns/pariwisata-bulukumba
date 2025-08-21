@@ -6,32 +6,59 @@ import { getImageUrl } from '../../utils/imageUrl.js';
 
 export default function ManageGallery() {
   const navigate = useNavigate();
-  const { wisataId } = useParams();
+  const { wisataId, hotelId, restoranId } = useParams();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [wisataInfo, setWisataInfo] = useState(null);
+  const [entityInfo, setEntityInfo] = useState(null);
+  const [entityType, setEntityType] = useState(null);
 
   function load() {
     setLoading(true);
-    // Load galleries filtered by wisataId
+    // Load galleries filtered by entity ID
     api.get('/admin/galleries').then((res) => {
-      const filteredData = res.data.filter(item => item.id_wisata == wisataId);
+      let filteredData = [];
+      if (wisataId) {
+        filteredData = res.data.filter(item => item.id_wisata == wisataId);
+      } else if (hotelId) {
+        filteredData = res.data.filter(item => item.id_hotel == hotelId);
+      } else if (restoranId) {
+        filteredData = res.data.filter(item => item.id_restoran == restoranId);
+      }
       console.log('Gallery data:', filteredData);
       setData(filteredData);
     }).finally(() => setLoading(false));
   }
 
   useEffect(() => { 
-    // Load wisata info
-    api.get(`/admin/attractions/${wisataId}`).then((res) => {
-      setWisataInfo(res.data);
-    }).catch(() => {
-      // If wisata not found, redirect back
-      navigate('/admin/attractions');
-    });
+    // Load entity info
+    if (wisataId) {
+      setEntityType('wisata');
+      api.get(`/admin/attractions/${wisataId}`).then((res) => {
+        setEntityInfo(res.data);
+      }).catch(() => {
+        // If wisata not found, redirect back
+        navigate('/admin/attractions');
+      });
+    } else if (hotelId) {
+      setEntityType('hotel');
+      api.get(`/admin/hotels/${hotelId}`).then((res) => {
+        setEntityInfo(res.data);
+      }).catch(() => {
+        // If hotel not found, redirect back
+        navigate('/admin/hotels');
+      });
+    } else if (restoranId) {
+      setEntityType('restoran');
+      api.get(`/admin/restorans/${restoranId}`).then((res) => {
+        setEntityInfo(res.data);
+      }).catch(() => {
+        // If restoran not found, redirect back
+        navigate('/admin/restorans');
+      });
+    }
     
     load(); 
-  }, [wisataId, navigate]);
+  }, [wisataId, hotelId, restoranId, navigate]);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -44,7 +71,13 @@ export default function ManageGallery() {
   }
 
   function handleEdit(item) {
-    navigate(`/admin/attractions/${wisataId}/galleries/${item.id_galeri}/edit`);
+    if (wisataId) {
+      navigate(`/admin/attractions/${wisataId}/galleries/${item.id_galeri}/edit`);
+    } else if (hotelId) {
+      navigate(`/admin/hotels/${hotelId}/galleries/${item.id_galeri}/edit`);
+    } else if (restoranId) {
+      navigate(`/admin/restorans/${restoranId}/galleries/${item.id_galeri}/edit`);
+    }
   }
 
   return (
@@ -55,16 +88,20 @@ export default function ManageGallery() {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => navigate('/admin/attractions')}
+              onClick={() => navigate(entityType === 'hotel' ? '/admin/hotels' : entityType === 'restoran' ? '/admin/restorans' : '/admin/attractions')}
             >
               ← Kembali
             </Button>
             <h1 className="text-2xl font-semibold">
-              Galeri {wisataInfo ? `${wisataInfo.nama_wisata}` : ''}
+              Galeri {entityInfo ? `${entityInfo.nama_wisata || entityInfo.nama_hotel || entityInfo.nama_restoran}` : ''}
             </h1>
           </div>
         </div>
-        <Link to={`/admin/attractions/${wisataId}/galleries/new`}>
+        <Link to={
+          wisataId ? `/admin/attractions/${wisataId}/galleries/new` : 
+          hotelId ? `/admin/hotels/${hotelId}/galleries/new` :
+          `/admin/restorans/${restoranId}/galleries/new`
+        }>
           <Button variant="soft">Tambah Gambar</Button>
         </Link>
       </div>
@@ -106,7 +143,7 @@ export default function ManageGallery() {
                       {item.keterangan && (
                         <p className="text-xs mb-1">{item.keterangan}</p>
                       )}
-                      <p className="text-xs opacity-80">{item.nama_wisata}</p>
+                      <p className="text-xs opacity-80">{item.nama_wisata || item.nama_hotel || item.nama_restoran}</p>
                     </div>
                   </div>
                 </div>
