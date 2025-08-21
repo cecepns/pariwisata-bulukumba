@@ -8,18 +8,11 @@ export default function AdminDashboard() {
       <div className="space-y-4">
         <h2 className="text-lg font-medium text-gray-700">Kelola Konten</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Link className="btn" to="/admin/attractions">Kelola Objek Wisata</Link>
-          <Link className="btn" to="/admin/hotels">Kelola Hotel</Link>
-          <Link className="btn" to="/admin/restorans">Kelola Restoran</Link>
+          <Link className="btn btn-outline" to="/admin/attractions">Kelola Objek Wisata</Link>
+          <Link className="btn btn-outline" to="/admin/hotels">Kelola Hotel</Link>
+          <Link className="btn btn-outline" to="/admin/restorans">Kelola Restoran</Link>
           <Link className="btn btn-outline" to="/admin/categories">Kelola Kategori</Link>
           <Link className="btn btn-outline" to="/admin/events">Kelola Event</Link>
-          <Link className="btn btn-outline" to="/admin/gallery">Kelola Galeri</Link>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <h2 className="text-lg font-medium text-gray-700">Kelola Sistem</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Link className="btn btn-outline" to="/admin/reviews">Kelola Review</Link>
         </div>
       </div>
