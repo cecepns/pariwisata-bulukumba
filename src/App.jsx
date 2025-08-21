@@ -27,6 +27,7 @@ import FormCategory from './pages/admin/FormCategory.jsx';
 import ManageEvents from './pages/admin/ManageEvents.jsx';
 import FormEvent from './pages/admin/FormEvent.jsx';
 import ManageReviews from './pages/admin/ManageReviews.jsx';
+import NotFoundPage from './pages/NotFoundPage.jsx';
 
 /**
  * ANCHOR: App
@@ -77,6 +78,9 @@ export default function App() {
         <Route path="/admin/events/:id/edit" element={<FormEvent />} />
         <Route path="/admin/reviews" element={<ManageReviews />} />
       </Route>
+      
+      {/* Catch-all route for 404 errors */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
